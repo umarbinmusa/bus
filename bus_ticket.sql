@@ -1,6 +1,6 @@
 -- phpMyAdmin SQL Dump
--- Complete Bus Ticket Booking System with Categorized Seating
--- Version 3.0 - Student/Staff Seat Categories + Booking History + Driver Earnings
+-- Complete Bus Ticket Booking System with Booking History
+-- Version 4.0 - Full Featured with Student/Staff Categories
 -- Date: February 2026
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -16,9 +16,11 @@ SET time_zone = "+00:00";
 --
 -- Database: `bus_ticket`
 --
+CREATE DATABASE IF NOT EXISTS `bus_ticket` DEFAULT CHARACTER SET latin1 COLLATE latin1_swedish_ci;
+USE `bus_ticket`;
 
 -- ========================================
--- DROP EXISTING TABLES (IF UPDATING)
+-- DROP EXISTING TABLES (CLEAN START)
 -- ========================================
 
 SET FOREIGN_KEY_CHECKS = 0;
@@ -59,13 +61,15 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `uname`, `name`, `email`, `password`, `gender`, `utype`, `address`, `mobile`) VALUES
-(1, 'admin', 'Admin', '----', 'admin', 'Male', 'Admin', '----', '0'),
-(2, 'deba', 'Debashish Sarker', 'dsarker333@gmail.com', '123456', 'Male', 'Passenger', '', '1000000000'),
-(3, 'oni', 'Onimesh', 'osarker@gmail.com', '123456', 'Male', 'Owner', '', '0000000000'),
+(1, 'admin', 'Admin', 'admin@bus.com', 'admin', 'Male', 'Admin', 'Admin Office', '0000000000'),
+(2, 'deba', 'Debashish Sarker', 'dsarker333@gmail.com', '123456', 'Male', 'Passenger', 'Dhaka, Bangladesh', '1000000000'),
+(3, 'oni', 'Onimesh', 'osarker@gmail.com', '123456', 'Male', 'Owner', 'Dhaka, Bangladesh', '0000000000'),
 (4, 'hori', 'Habibur Hori', 'habiburaiub@gmail.com', '123456', 'Male', 'Owner', 'Kuril, Dhaka', '1700000000'),
 (5, 'rubel', 'Rubel', 'rubelmhr@gmail.com', '123456', 'Male', 'Passenger', 'Kuril', '1722222222'),
 (6, 'student1', 'John Student', 'student@example.com', '123456', 'Male', 'Student', 'Student Hostel, Dhaka', '1711111111'),
-(7, 'staff1', 'Jane Staff', 'staff@example.com', '123456', 'Female', 'Staff', 'Staff Quarter, Dhaka', '1722222222');
+(7, 'staff1', 'Jane Staff', 'staff@example.com', '123456', 'Female', 'Staff', 'Staff Quarter, Dhaka', '1722222222'),
+(8, 'student2', 'Alice Student', 'alice@student.com', '123456', 'Female', 'Student', 'Campus Dhaka', '1733333333'),
+(9, 'staff2', 'Bob Staff', 'bob@staff.com', '123456', 'Male', 'Staff', 'Staff Area, Dhaka', '1744444444');
 
 -- ========================================
 -- TABLE: locations
@@ -88,7 +92,10 @@ INSERT INTO `locations` (`id`, `name`) VALUES
 (4, 'Rajshahi'),
 (5, 'Sylhet'),
 (6, 'Khulna'),
-(7, 'Barisal');
+(7, 'Barisal'),
+(8, 'Rangpur'),
+(9, 'Mymensingh'),
+(10, 'Comilla');
 
 -- ========================================
 -- TABLE: buses (WITH SEAT CATEGORIES)
@@ -109,7 +116,7 @@ CREATE TABLE `buses` (
   `student_seats` varchar(255) DEFAULT NULL COMMENT 'Comma-separated list of student-only seats (50%)',
   `staff_seats` varchar(255) DEFAULT NULL COMMENT 'Comma-separated list of staff-only seats (25%)',
   `general_seats` varchar(255) DEFAULT NULL COMMENT 'Comma-separated list of general seats (25%)',
-  `approved` tinyint(1) NOT NULL DEFAULT '0',
+  `approved` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `fk_usr_bus` (`owner_id`),
   CONSTRAINT `fk_usr_bus` FOREIGN KEY (`owner_id`) REFERENCES `users` (`id`)
@@ -120,10 +127,12 @@ CREATE TABLE `buses` (
 --
 
 INSERT INTO `buses` (`id`, `bname`, `bus_no`, `owner_id`, `from_loc`, `from_time`, `to_loc`, `to_time`, `fare`, `total_seats`, `seat_layout`, `student_seats`, `staff_seats`, `general_seats`, `approved`) VALUES
-(1, 'Hanif', 'NM-12456', 3, 'Naogaon', '10:30 PM', 'Dhaka', '05:00 AM', 500, 40, '10x4', 'A1,A2,A3,A4,B1,B2,B3,B4,C1,C2,C3,C4,D1,D2,D3,D4,E1,E2,E3,E4', 'F1,F2,F3,F4,G1,G2,G3,G4,H1,H2', 'H3,H4,I1,I2,I3,I4,J1,J2,J3,J4', 1),
-(2, 'Hanif', 'NM-12456', 3, 'Dhaka', '09:45 PM', 'Naogaon', '04:15 AM', 500, 40, '10x4', 'A1,A2,A3,A4,B1,B2,B3,B4,C1,C2,C3,C4,D1,D2,D3,D4,E1,E2,E3,E4', 'F1,F2,F3,F4,G1,G2,G3,G4,H1,H2', 'H3,H4,I1,I2,I3,I4,J1,J2,J3,J4', 1),
-(3, 'Green Line', 'GL-78901', 3, 'Dhaka', '08:00 AM', 'Chittagong', '02:00 PM', 700, 50, '13x4', 'A1,A2,A3,A4,B1,B2,B3,B4,C1,C2,C3,C4,D1,D2,D3,D4,E1,E2,E3,E4,F1,F2,F3,F4,G1,G2', 'G3,G4,H1,H2,H3,H4,I1,I2,I3,I4,J1,J2,J3', 'J4,K1,K2,K3,K4,L1,L2,L3,L4,M1,M2,M3,M4', 1),
-(4, 'Shyamoli', 'SH-55555', 4, 'Dhaka', '11:00 PM', 'Sylhet', '05:30 AM', 600, 30, '8x4', 'A1,A2,A3,A4,B1,B2,B3,B4,C1,C2,C3,C4,D1,D2,D3', 'D4,E1,E2,E3,E4,F1,F2,F3', 'F4,G1,G2,G3,G4,H1,H2,H3,H4', 1);
+(1, 'Hanif Enterprise', 'DH-12456', 3, 'Naogaon', '10:30 PM', 'Dhaka', '05:00 AM', 500, 40, '10x4', 'A1,A2,A3,A4,B1,B2,B3,B4,C1,C2,C3,C4,D1,D2,D3,D4,E1,E2,E3,E4', 'F1,F2,F3,F4,G1,G2,G3,G4,H1,H2', 'H3,H4,I1,I2,I3,I4,J1,J2,J3,J4', 1),
+(2, 'Hanif Enterprise', 'DH-12457', 3, 'Dhaka', '09:45 PM', 'Naogaon', '04:15 AM', 500, 40, '10x4', 'A1,A2,A3,A4,B1,B2,B3,B4,C1,C2,C3,C4,D1,D2,D3,D4,E1,E2,E3,E4', 'F1,F2,F3,F4,G1,G2,G3,G4,H1,H2', 'H3,H4,I1,I2,I3,I4,J1,J2,J3,J4', 1),
+(3, 'Green Line Paribahan', 'DH-78901', 3, 'Dhaka', '08:00 AM', 'Chittagong', '02:00 PM', 700, 50, '13x4', 'A1,A2,A3,A4,B1,B2,B3,B4,C1,C2,C3,C4,D1,D2,D3,D4,E1,E2,E3,E4,F1,F2,F3,F4,G1,G2', 'G3,G4,H1,H2,H3,H4,I1,I2,I3,I4,J1,J2,J3', 'J4,K1,K2,K3,K4,L1,L2,L3,L4,M1,M2,M3,M4', 1),
+(4, 'Shyamoli Paribahan', 'DH-55555', 4, 'Dhaka', '11:00 PM', 'Sylhet', '05:30 AM', 600, 30, '8x4', 'A1,A2,A3,A4,B1,B2,B3,B4,C1,C2,C3,C4,D1,D2,D3', 'D4,E1,E2,E3,E4,F1,F2,F3', 'F4,G1,G2,G3,G4,H1,H2,H3,H4', 1),
+(5, 'Ena Transport', 'DH-66666', 3, 'Dhaka', '07:00 AM', 'Rajshahi', '01:00 PM', 550, 40, '10x4', 'A1,A2,A3,A4,B1,B2,B3,B4,C1,C2,C3,C4,D1,D2,D3,D4,E1,E2,E3,E4', 'F1,F2,F3,F4,G1,G2,G3,G4,H1,H2', 'H3,H4,I1,I2,I3,I4,J1,J2,J3,J4', 1),
+(6, 'Shohag Paribahan', 'DH-77777', 4, 'Dhaka', '08:30 PM', 'Khulna', '03:30 AM', 650, 40, '10x4', 'A1,A2,A3,A4,B1,B2,B3,B4,C1,C2,C3,C4,D1,D2,D3,D4,E1,E2,E3,E4', 'F1,F2,F3,F4,G1,G2,G3,G4,H1,H2', 'H3,H4,I1,I2,I3,I4,J1,J2,J3,J4', 1);
 
 -- ========================================
 -- TABLE: tickets (WITH BOOKING FEATURES)
@@ -150,6 +159,40 @@ CREATE TABLE `tickets` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- ========================================
+-- TABLE: booking_history
+-- ========================================
+
+CREATE TABLE `booking_history` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(5) NOT NULL COMMENT 'User who made the booking (passenger, student, or staff)',
+  `user_type` enum('Passenger','Student','Staff') NOT NULL COMMENT 'Type of user',
+  `ticket_id` int(5) DEFAULT NULL COMMENT 'Reference to ticket if booking was confirmed',
+  `bus_id` int(5) NOT NULL,
+  `bus_name` varchar(25) NOT NULL,
+  `bus_no` varchar(25) NOT NULL,
+  `from_loc` varchar(20) NOT NULL,
+  `to_loc` varchar(20) NOT NULL,
+  `jdate` varchar(25) NOT NULL COMMENT 'Journey date',
+  `seats_booked` text NOT NULL COMMENT 'Serialized array of seat numbers',
+  `seat_count` int(3) NOT NULL COMMENT 'Number of seats booked',
+  `seat_category` enum('student','staff','general','mixed') DEFAULT 'general',
+  `fare_per_seat` decimal(10,2) NOT NULL,
+  `total_fare` decimal(10,2) NOT NULL,
+  `discount_percent` int(3) DEFAULT 0 COMMENT 'Discount percentage applied',
+  `final_amount` decimal(10,2) NOT NULL COMMENT 'Amount after discount',
+  `booking_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `booking_status` enum('pending','confirmed','cancelled','expired') NOT NULL DEFAULT 'confirmed',
+  `payment_status` enum('pending','paid','refunded') DEFAULT 'paid',
+  `cancellation_time` datetime DEFAULT NULL,
+  `cancellation_reason` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_bus_id` (`bus_id`),
+  KEY `idx_jdate` (`jdate`),
+  KEY `idx_booking_time` (`booking_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- ========================================
 -- TABLE: seat_templates
 -- ========================================
 
@@ -171,40 +214,6 @@ INSERT INTO `seat_templates` (`name`, `total_seats`, `layout`, `description`) VA
 ('Standard Bus', 40, '10x4', '40 seats in 10 rows, 4 seats per row - Most common configuration'),
 ('Large Bus', 50, '13x4', '50 seats in 13 rows (includes 2 back row seats) - High capacity'),
 ('Luxury Coach', 30, '8x4', '30 seats in 8 rows, spacious seating - Premium comfort');
-
--- ========================================
--- TABLE: booking_history
--- ========================================
-
-CREATE TABLE `booking_history` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(5) NOT NULL COMMENT 'User who made the booking (passenger, student, or staff)',
-  `user_type` enum('Passenger','Student','Staff') NOT NULL COMMENT 'Type of user',
-  `ticket_id` int(5) DEFAULT NULL COMMENT 'Reference to ticket if booking was confirmed',
-  `bus_id` int(5) NOT NULL,
-  `bus_name` varchar(25) NOT NULL,
-  `bus_no` varchar(25) NOT NULL,
-  `from_loc` varchar(20) NOT NULL,
-  `to_loc` varchar(20) NOT NULL,
-  `jdate` varchar(25) NOT NULL COMMENT 'Journey date',
-  `seats_booked` varchar(255) NOT NULL COMMENT 'Serialized array of seat numbers',
-  `seat_count` int(3) NOT NULL COMMENT 'Number of seats booked',
-  `seat_category` enum('student','staff','general','mixed') DEFAULT 'general',
-  `fare_per_seat` decimal(10,2) NOT NULL,
-  `total_fare` decimal(10,2) NOT NULL,
-  `discount_percent` int(3) DEFAULT 0 COMMENT 'Discount percentage applied',
-  `final_amount` decimal(10,2) NOT NULL COMMENT 'Amount after discount',
-  `booking_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `booking_status` enum('pending','confirmed','cancelled','expired') NOT NULL DEFAULT 'confirmed',
-  `payment_status` enum('pending','paid','refunded') DEFAULT 'paid',
-  `cancellation_time` datetime DEFAULT NULL,
-  `cancellation_reason` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_user_id` (`user_id`),
-  KEY `idx_bus_id` (`bus_id`),
-  KEY `idx_jdate` (`jdate`),
-  KEY `idx_booking_time` (`booking_time`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- ========================================
 -- TABLE: driver_earnings
@@ -234,27 +243,6 @@ CREATE TABLE `driver_earnings` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- ========================================
--- TABLE: booking_holds
--- ========================================
-
-CREATE TABLE `booking_holds` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `passenger_id` int(5) NOT NULL COMMENT 'User who is holding the seats',
-  `bus_id` int(5) NOT NULL COMMENT 'Bus being booked',
-  `jdate` varchar(25) NOT NULL COMMENT 'Journey date',
-  `seats` varchar(120) NOT NULL COMMENT 'JSON array of seat numbers',
-  `hold_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'When the hold was created',
-  `expires_at` datetime NOT NULL COMMENT 'When the hold expires (hold_time + 5 minutes)',
-  `status` enum('active','expired','confirmed','cancelled') NOT NULL DEFAULT 'active' COMMENT 'Hold status',
-  PRIMARY KEY (`id`),
-  KEY `fk_usr_hold` (`passenger_id`),
-  KEY `fk_bus_hold` (`bus_id`),
-  KEY `idx_expires` (`expires_at`, `status`),
-  CONSTRAINT `fk_usr_hold` FOREIGN KEY (`passenger_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_bus_hold` FOREIGN KEY (`bus_id`) REFERENCES `buses` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
--- ========================================
 -- TABLE: earnings (Legacy - kept for compatibility)
 -- ========================================
 
@@ -262,7 +250,7 @@ CREATE TABLE `earnings` (
   `id` int(5) NOT NULL AUTO_INCREMENT,
   `bus_id` int(5) NOT NULL,
   `date` varchar(10) NOT NULL,
-  `ssold` int(3) NOT NULL DEFAULT '0',
+  `ssold` int(3) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `fk_ear_bus` (`bus_id`),
   CONSTRAINT `fk_ear_bus` FOREIGN KEY (`bus_id`) REFERENCES `buses` (`id`)
@@ -292,6 +280,7 @@ CREATE TABLE `notices` (
 DELIMITER $$
 
 DROP TRIGGER IF EXISTS `after_ticket_insert`$$
+
 CREATE TRIGGER `after_ticket_insert` AFTER INSERT ON `tickets`
 FOR EACH ROW
 BEGIN
@@ -302,6 +291,7 @@ BEGIN
   DECLARE v_to_loc VARCHAR(20);
   DECLARE v_seat_count INT;
   DECLARE v_discount DECIMAL(5,2);
+  DECLARE v_final_amount DECIMAL(10,2);
   
   -- Get user type
   SELECT utype INTO v_user_type FROM users WHERE id = NEW.passenger_id;
@@ -323,6 +313,9 @@ BEGIN
     WHEN v_user_type = 'Staff' THEN 5
     ELSE 0
   END;
+  
+  -- Calculate final amount
+  SET v_final_amount = NEW.fare * (1 - v_discount/100);
   
   -- Insert into booking history
   INSERT INTO booking_history (
@@ -346,7 +339,7 @@ BEGIN
     NEW.fare / v_seat_count,
     NEW.fare,
     v_discount,
-    NEW.fare,
+    v_final_amount,
     NEW.booking_time,
     IF(NEW.booking_confirmed = 1, 'confirmed', 'pending'),
     'paid'
@@ -362,6 +355,7 @@ DELIMITER ;
 DELIMITER $$
 
 DROP PROCEDURE IF EXISTS `calculate_driver_earnings`$$
+
 CREATE PROCEDURE `calculate_driver_earnings`(
   IN p_bus_id INT,
   IN p_jdate VARCHAR(25)
@@ -433,6 +427,7 @@ DELIMITER ;
 -- ========================================
 
 DROP VIEW IF EXISTS `v_booking_history_detail`;
+
 CREATE VIEW `v_booking_history_detail` AS
 SELECT 
   bh.*,
@@ -451,14 +446,13 @@ ORDER BY bh.booking_time DESC;
 -- AUTO_INCREMENT RESET
 -- ========================================
 
-ALTER TABLE `buses` AUTO_INCREMENT=5;
-ALTER TABLE `users` AUTO_INCREMENT=8;
-ALTER TABLE `locations` AUTO_INCREMENT=8;
+ALTER TABLE `buses` AUTO_INCREMENT=7;
+ALTER TABLE `users` AUTO_INCREMENT=10;
+ALTER TABLE `locations` AUTO_INCREMENT=11;
 ALTER TABLE `seat_templates` AUTO_INCREMENT=5;
 ALTER TABLE `tickets` AUTO_INCREMENT=1;
 ALTER TABLE `booking_history` AUTO_INCREMENT=1;
 ALTER TABLE `driver_earnings` AUTO_INCREMENT=1;
-ALTER TABLE `booking_holds` AUTO_INCREMENT=1;
 ALTER TABLE `earnings` AUTO_INCREMENT=1;
 ALTER TABLE `notices` AUTO_INCREMENT=1;
 
@@ -472,61 +466,15 @@ COMMIT;
 -- VERIFICATION QUERIES
 -- ========================================
 
--- Check buses with seat categories:
-SELECT 
-  id, 
-  bname, 
-  total_seats,
-  CASE 
-    WHEN student_seats IS NOT NULL THEN LENGTH(student_seats) - LENGTH(REPLACE(student_seats, ',', '')) + 1
-    ELSE 0 
-  END as student_count,
-  CASE 
-    WHEN staff_seats IS NOT NULL THEN LENGTH(staff_seats) - LENGTH(REPLACE(staff_seats, ',', '')) + 1
-    ELSE 0 
-  END as staff_count,
-  CASE 
-    WHEN general_seats IS NOT NULL THEN LENGTH(general_seats) - LENGTH(REPLACE(general_seats, ',', '')) + 1
-    ELSE 0 
-  END as general_count,
-  approved
-FROM buses;
-
--- Check users by type:
-SELECT utype, COUNT(*) as count FROM users GROUP BY utype;
-
--- Check available templates:
-SELECT * FROM seat_templates;
+-- Show summary
+SELECT 'Database setup complete!' as Status;
+SELECT COUNT(*) as Total_Users FROM users;
+SELECT COUNT(*) as Total_Buses FROM buses;
+SELECT COUNT(*) as Total_Locations FROM locations;
+SELECT 'Trigger created: after_ticket_insert' as Triggers;
+SELECT 'Procedure created: calculate_driver_earnings' as Procedures;
+SELECT 'View created: v_booking_history_detail' as Views;
 
 -- ========================================
--- INSTALLATION NOTES
--- ========================================
--- 
--- This SQL file includes:
--- 1. All original tables (users, buses, tickets, locations, etc.)
--- 2. NEW: Seat categorization (student_seats, staff_seats, general_seats)
--- 3. NEW: booking_history table for user booking tracking
--- 4. NEW: driver_earnings table for owner analytics
--- 5. NEW: Trigger to auto-populate booking history
--- 6. NEW: Stored procedure to calculate driver earnings
--- 7. Sample data with categorized buses
--- 8. Test accounts (admin, student1, staff1)
---
--- FEATURES:
--- - Student seats (50% of bus) - 10% discount
--- - Staff seats (25% of bus) - 5% discount
--- - General seats (25% of bus) - Regular fare
--- - Students can book staff seats in last 2 minutes of timer
--- - Complete booking history with filters
--- - Driver earnings by seat category
--- - 10% platform commission auto-calculated
---
--- TO INSTALL:
--- mysql -u root -p bus_ticket < bus_ticket_complete_categorized.sql
---
--- DEFAULT LOGINS:
--- Admin: admin / admin
--- Student: student1 / 123456 (10% discount)
--- Staff: staff1 / 123456 (5% discount)
--- Owner: oni / 123456
+-- END OF SQL FILE
 -- ========================================

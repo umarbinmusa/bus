@@ -1,7 +1,11 @@
 <?php
 session_start();
-if (!isset($_SESSION['user']) || $_SESSION['user']['utype'] != "Passenger")
-  header("Location: index.php");
+
+// Allow Passenger, Student, and Staff to access this page
+if (!isset($_SESSION['user']) || !in_array($_SESSION['user']['utype'], ['Passenger', 'Student', 'Staff'])) {
+    header("Location: index.php");
+    exit();
+}
 
 // Enable error reporting
 error_reporting(E_ALL);
@@ -141,7 +145,7 @@ if (isset($_POST['buy'])) {
 </form>
 
 <div class="popup" id="seatViewer"></div>
-<div class="loader text-center" id="wait"><img src="/img/bus-loader.gif" alt="Wait..."/></div>
+<div class="loader text-center" id="wait"><img src="img/bus-loader.gif" alt="Wait..."/></div>
 
 <div class="table-con">
 <div class="row">
@@ -154,9 +158,9 @@ if (isset($_POST['buy'])) {
 <?php
 require_once 'inc/database.php';
 $conn = initDB();
-$from = isset($_GET['from']) ? $_GET['from'] : "";
-$to = isset($_GET['to']) ? $_GET['to'] : "";
-$res = $conn->query("select * from buses where from_loc='".$from."' and to_loc='".$to."'");
+$from = isset($_GET['from']) ? $conn->real_escape_string($_GET['from']) : "";
+$to = isset($_GET['to']) ? $conn->real_escape_string($_GET['to']) : "";
+$res = $conn->query("select * from buses where from_loc='".$from."' and to_loc='".$to."' and approved=1");
 if ($res->num_rows == 0 || !isset($_GET['jdate']) || $_GET['jdate'] == '') {
   echo '<div class="row">
     <div class="col-sm-12 text-center"><h4>No Bus</h4></div>
@@ -190,7 +194,6 @@ $(".content").click(function() {
     console.log("Bus clicked:", bus);
     console.log("Date:", date);
     
-    // Use relative path for AJAX
     var ajaxUrl = "inc/ajax.php?type=showseats&bus=" + bus + "&date=" + date;
     console.log("AJAX URL:", ajaxUrl);
     
@@ -198,7 +201,7 @@ $(".content").click(function() {
         url: ajaxUrl,
         method: "GET",
         success: function(result) {
-            console.log("AJAX success, response length:", result.length);
+            console.log("AJAX success");
             setTimeout(function() {
                 $("#seatViewer").html(result);
                 $("#seatViewer").show();
@@ -208,7 +211,7 @@ $(".content").click(function() {
             console.error("AJAX Error:", status, error);
             console.error("Status Code:", xhr.status);
             console.error("Response:", xhr.responseText);
-            alert("Error loading seats: " + error + "\nStatus: " + xhr.status + "\nCheck console for details");
+            alert("Error loading seats: " + error + "\nStatus: " + xhr.status);
         },
         beforeSend: function() {
             $("#wait").show();

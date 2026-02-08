@@ -5,6 +5,7 @@ if (isset($_GET['logout'])) {
 	session_destroy();
 }
 elseif (isset($_SESSION['user'])) {
+	// Route users based on their type
 	if (in_array($_SESSION['user']['utype'], ["Passenger", "Student", "Staff"])) {
 		header("Location: buy_ticket.php");
 	}
@@ -22,8 +23,10 @@ elseif (isset($_POST['signup'])) {
 	require_once 'inc/database.php';
 	$conn = initDB();
 	$sql = "insert into users (name, uname, email, password, gender, utype, address, mobile) values ('";
-	$sql .= $_POST['name']."','".$_POST['uname']."','".$_POST['email']."','".$_POST['password']."','";
-	$sql .= $_POST['gender']."','".$_POST['utype']."','".$_POST['address']."','".$_POST['mobile']."')";
+	$sql .= $conn->real_escape_string($_POST['name'])."','".$conn->real_escape_string($_POST['uname'])."','";
+	$sql .= $conn->real_escape_string($_POST['email'])."','".$conn->real_escape_string($_POST['password'])."','";
+	$sql .= $conn->real_escape_string($_POST['gender'])."','".$conn->real_escape_string($_POST['utype'])."','";
+	$sql .= $conn->real_escape_string($_POST['address'])."','".$conn->real_escape_string($_POST['mobile'])."')";
 	if ($conn->query($sql)) {
 		$acc = "ok";
 	}
@@ -35,7 +38,7 @@ elseif (isset($_POST['signup'])) {
 elseif (isset($_POST['login'])) {
 	require_once 'inc/database.php';
 	$conn = initDB();
-	$res = $conn->query("select id,utype from users where uname='" . $_POST['uname'] . "' and password='" . $_POST['upass'] . "'");
+	$res = $conn->query("select id,utype from users where uname='" . $conn->real_escape_string($_POST['uname']) . "' and password='" . $conn->real_escape_string($_POST['upass']) . "'");
 	if ($res->num_rows == 0)
 		$acc = "Invalid Username or Password.";
 	else {
@@ -54,7 +57,7 @@ t_navbar();
 <tr>
 	<td width="70%">
 		<img src="img/cover_bus.jpg" alt="Bus" height="100%"/>
-	</div>
+	</td>
 	<td width="30%">
 		<?php
 			if ($acc!="") {
@@ -124,7 +127,7 @@ t_navbar();
 		var autocomplete;
 		function initialize() {
 			autocomplete = new google.maps.places.Autocomplete(document.getElementById("inputAddress"));
-			autocomplete.setComponentRestrictions({'country': 'bd'});
+			autocomplete.setComponentRestrictions({'country': 'ng'});
 			google.maps.event.addListener(autocomplete, 'place_changed', function() {});
 		}
 	    </script>
@@ -142,7 +145,7 @@ t_navbar();
 	        <button type="submit" class="btn btn-primary" name="signup">Sign Up</button>
 	      </div>
 	    </div>
-		<script async>
+		<script>
 		$("#inputUname").keyup(function() {
 			$.ajax({
 				url: "inc/ajax.php?type=username&q=" + $(this).val(),
