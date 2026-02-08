@@ -1,75 +1,94 @@
 <?php
 session_start();
-if (!isset($_SESSION['user']) || !in_array($_SESSION['user']['utype'], ["Passenger", "Student", "Staff"]))
+if (!isset($_SESSION['user']) || $_SESSION['user']['utype'] != "Passenger")
   header("Location: index.php");
+
+// Enable error reporting
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 include 'inc/basic_template.php';
 t_header("Bus Ticket Booking &mdash; Buy Tickets");
 t_login_nav();
 t_sidebar();
 
+// PROCESS BOOKING
 if (isset($_POST['buy'])) {
   require_once 'inc/database.php';
   $conn = initDB();
   
-  if (!isset($_POST['seats']) || $_POST['seats'] == "") {
+  // Check if seats are selected
+  if (!isset($_POST['seats']) || empty($_POST['seats'])) {
     echo '<div class="alert alert-danger"><strong>Error: </strong>No seats selected</div>';
   }
   else {
-    // Simple booking - just check if seats are available
-    $userId = $_SESSION['user']['id'];
-    $busId = $_POST['bus_id'];
-    $jdate = $_POST['jdate'];
+    // Check all required fields
+    $errors = [];
     
-    // Verify seats are still available
-    $existingBookings = $conn->query("SELECT seats FROM tickets 
-                                      WHERE bus_id='$busId' 
-                                      AND jdate='$jdate' 
-                                      AND booking_confirmed=1");
-    
-    $bookedSeats = array();
-    while ($row = $existingBookings->fetch_assoc()) {
-      $bookedSeats = array_merge($bookedSeats, unserialize($row['seats']));
+    if (!isset($_POST['bus_id']) || empty($_POST['bus_id'])) {
+      $errors[] = "Missing bus_id";
+    }
+    if (!isset($_POST['jdate']) || empty($_POST['jdate'])) {
+      $errors[] = "Missing journey date";
+    }
+    if (!isset($_POST['fare']) || $_POST['fare'] <= 0) {
+      $errors[] = "Invalid fare amount";
     }
     
-    $conflict = array_intersect($_POST['seats'], $bookedSeats);
-    
-    if (count($conflict) > 0) {
-      echo '<div class="alert alert-danger"><strong>Error: </strong>Some seats are no longer available: ' . implode(', ', $conflict) . '</div>';
-    } else {
-      // Proceed with booking
-      $sql = "INSERT INTO tickets (passenger_id, bus_id, jdate, seats, fare, booking_time, booking_expires, booking_confirmed) VALUES ('";
-      $sql .= $_SESSION['user']['id']."','".$_POST['bus_id']."','".$_POST['jdate']."','".serialize($_POST['seats'])."','";
-      $sql .= $_POST['fare']."', NOW(), DATE_ADD(NOW(), INTERVAL 5 MINUTE), 1)";
-
-      if ($conn->query($sql)) {
-        $userType = $_SESSION['user']['utype'];
-        $discount = 0;
-        if ($userType == 'Student') {
-          $discount = 10; // 10% student discount
-        } elseif ($userType == 'Staff') {
-          $discount = 5; // 5% staff discount
-        }
-        
-        $discountMessage = $discount > 0 ? " ($discount% $userType discount applied)" : "";
-        
-        echo '<div class="alert alert-success">
-                <strong>Booking Confirmed!</strong>'.$discountMessage.'<br/>
-                <a class="text-right" href="print.php?ticket='.$conn->insert_id.'">
-                  <button class="btn btn-info mt-2"><i class="fa fa-print"></i> Print Ticket</button>
-                </a>
-              </div>';
+    if (!empty($errors)) {
+      echo '<div class="alert alert-danger"><strong>Errors:</strong><ul>';
+      foreach($errors as $error) {
+        echo '<li>'.$error.'</li>';
       }
-      else {
-        echo '<div class="alert alert-danger"><strong>Error: </strong>'.$conn->error.'</div>';
+      echo '</ul></div>';
+    } else {
+      // All data is present, validate and insert into database
+      $passenger_id = intval($_SESSION['user']['id']);
+      $bus_id = intval($_POST['bus_id']);
+      $jdate = $conn->real_escape_string($_POST['jdate']);
+      $fare = intval($_POST['fare']);
+      
+      // Validate and serialize seats properly
+      if (is_array($_POST['seats']) && count($_POST['seats']) > 0) {
+        $seats_serialized = serialize($_POST['seats']);
+      } else {
+        echo '<div class="alert alert-danger">Invalid seat selection</div>';
+        $seats_serialized = null;
+      }
+      
+      if ($seats_serialized) {
+        $sql = "INSERT INTO tickets (passenger_id, bus_id, jdate, seats, fare) VALUES (";
+        $sql .= "$passenger_id, $bus_id, '$jdate', '$seats_serialized', $fare)";
+        
+        if ($conn->query($sql)) {
+          $ticket_id = $conn->insert_id;
+          echo '<div class="alert alert-success">';
+          echo '<h4>✅ Booking Successful!</h4>';
+          echo 'Ticket ID: '.$ticket_id.'<br>';
+          echo 'Seats: '.implode(', ', $_POST['seats']).'<br>';
+          echo 'Total Fare: ৳'.$fare.'<br>';
+          echo '<a href="history.php" class="btn btn-info mt-2">View Booking History</a> ';
+          echo '<a href="print.php?ticket='.$ticket_id.'" class="btn btn-success mt-2">Print Ticket</a>';
+          echo '</div>';
+        }
+        else {
+          echo '<div class="alert alert-danger">';
+          echo '<strong>Database Error:</strong><br>';
+          echo 'Error: '.$conn->error;
+          echo '</div>';
+        }
       }
     }
   }
   $conn->close();
 }
 ?>
+
 <!-- Select Locations -->
 <link rel="stylesheet" href="css/easy-autocomplete.min.css"/>
 <link rel="stylesheet" href="css/bootstrap-datepicker.min.css"/>
+
+<h3>Book Your Ticket</h3>
 
 <form action="" method="get">
 	<div class="form-group row">
@@ -120,15 +139,16 @@ if (isset($_POST['buy'])) {
     </div>
   </div>
 </form>
+
 <div class="popup" id="seatViewer"></div>
 <div class="loader text-center" id="wait"><img src="/img/bus-loader.gif" alt="Wait..."/></div>
+
 <div class="table-con">
 <div class="row">
-  <div class="col-sm-1">Sl.</div>
-  <div class="col-sm-3">Bus Name</div>
-  <div class="col-sm-2">Dep. Time</div>
+  <div class="col-sm-2">Sl.</div>
+  <div class="col-sm-4">Bus Name</div>
+  <div class="col-sm-2">Dip. Time</div>
   <div class="col-sm-2">Arr. Time</div>
-  <div class="col-sm-2">Available Seats</div>
   <div class="col-sm-2">Fare (৳)</div>
 </div>
 <?php
@@ -136,64 +156,23 @@ require_once 'inc/database.php';
 $conn = initDB();
 $from = isset($_GET['from']) ? $_GET['from'] : "";
 $to = isset($_GET['to']) ? $_GET['to'] : "";
-$res = $conn->query("select * from buses where from_loc='".$from."' and to_loc='".$to."' and approved=1");
+$res = $conn->query("select * from buses where from_loc='".$from."' and to_loc='".$to."'");
 if ($res->num_rows == 0 || !isset($_GET['jdate']) || $_GET['jdate'] == '') {
   echo '<div class="row">
-    <div class="col-sm-12 text-center"><h4>No Bus Found</h4><p>Try searching with different locations or dates</p></div>
+    <div class="col-sm-12 text-center"><h4>No Bus</h4></div>
   </div>';
 }
 else {
   while ($row = $res->fetch_assoc()) {
-    // Calculate available seats
-    $busId = $row['id'];
-    $jdate = $_GET['jdate'];
-    $totalSeats = $row['total_seats'];
-    
-    $bookedSeatsQuery = $conn->query("SELECT seats FROM tickets 
-                                      WHERE bus_id='$busId' 
-                                      AND jdate='$jdate' 
-                                      AND booking_confirmed=1");
-    
-    $bookedCount = 0;
-    while ($seatRow = $bookedSeatsQuery->fetch_assoc()) {
-      $bookedCount += count(unserialize($seatRow['seats']));
-    }
-    
-    $availableSeats = $totalSeats - $bookedCount;
-    
-    // Apply user type discount
-    $fare = $row['fare'];
-    $userType = $_SESSION['user']['utype'];
-    $originalFare = $fare;
-    
-    if ($userType == 'Student') {
-      $fare = $fare * 0.9; // 10% discount
-    } elseif ($userType == 'Staff') {
-      $fare = $fare * 0.95; // 5% discount
-    }
-    
     echo '
-    <div class="row content" data-bus-id="'.$row['id'].'">
-      <div class="col-sm-1">'.$row['id'].'</div>
-      <div class="col-sm-3">'.$row['bname'].' ('.$row['total_seats'].' seats)</div>
+    <div class="row content" data-bus-id="'.$row['id'].'" style="cursor: pointer; padding: 10px;">
+      <div class="col-sm-2">'.$row['id'].'</div>
+      <div class="col-sm-4">'.$row['bname'].'</div>
       <div class="col-sm-2">'.$row['from_time'].'</div>
       <div class="col-sm-2">'.$row['to_time'].'</div>
-      <div class="col-sm-2"><strong>'.$availableSeats.'</strong> / '.$totalSeats.'</div>
-      <div class="col-sm-2">';
-    
-    if ($userType != 'Passenger') {
-      echo '<del>৳'.$originalFare.'</del> ';
-    }
-    echo '৳'.number_format($fare, 0);
-    
-    if ($userType == 'Student') {
-      echo ' <span class="badge badge-success">10% Off</span>';
-    } elseif ($userType == 'Staff') {
-      echo ' <span class="badge badge-info">5% Off</span>';
-    }
-    
-    echo '</div>
-    </div>';
+      <div class="col-sm-2">'.$row['fare'].'</div>
+    </div>
+    ';
   }
 }
 $conn->close();
@@ -201,21 +180,35 @@ $conn->close();
 </div>
 
 <script>
+console.log("Page loaded. jQuery version:", $.fn.jquery);
+console.log("Current location:", window.location.href);
+
 $(".content").click(function() {
     var bus = $(this).find(">:first-child").html();
-    var date = "<?php echo isset($_GET['jdate']) ? $_GET['jdate'] : '';?>";
+    var date = "<?php echo isset($_GET['jdate']) ? $_GET['jdate'] : ''; ?>";
     
-    if (!date) {
-      alert("Please select a journey date first!");
-      return;
-    }
+    console.log("Bus clicked:", bus);
+    console.log("Date:", date);
+    
+    // Use relative path for AJAX
+    var ajaxUrl = "inc/ajax.php?type=showseats&bus=" + bus + "&date=" + date;
+    console.log("AJAX URL:", ajaxUrl);
     
     $.ajax({
-        url: "./inc/ajax.php?type=showseats&bus=" + bus + "&date=" + date,
+        url: ajaxUrl,
+        method: "GET",
         success: function(result) {
+            console.log("AJAX success, response length:", result.length);
             setTimeout(function() {
                 $("#seatViewer").html(result);
-            }, 1000);
+                $("#seatViewer").show();
+            }, 500);
+        },
+        error: function(xhr, status, error) {
+            console.error("AJAX Error:", status, error);
+            console.error("Status Code:", xhr.status);
+            console.error("Response:", xhr.responseText);
+            alert("Error loading seats: " + error + "\nStatus: " + xhr.status + "\nCheck console for details");
         },
         beforeSend: function() {
             $("#wait").show();
@@ -223,20 +216,19 @@ $(".content").click(function() {
         complete: function() {
             setTimeout(function() {
                 $("#wait").hide();
-            }, 1000);
+            }, 500);
         }
     });
-    setTimeout(function() {
-        $("#seatViewer").show();
-    }, 1100);
+});
+
+// Close seat viewer
+$(document).on('click', '#seatViewer .close, #seatViewer [data-dismiss="modal"]', function() {
+    $('#seatViewer').hide();
 });
 </script>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
+
+<br><br><br><br><br><br>
+
 <?php
 t_footer();
 ?>
