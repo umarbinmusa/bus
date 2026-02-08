@@ -1,17 +1,12 @@
 -- phpMyAdmin SQL Dump
--- version 4.8.3
--- https://www.phpmyadmin.net/
---
--- Host: 127.0.0.1
--- Generation Time: Aug 06, 2019 at 08:20 PM
--- Server version: 10.1.37-MariaDB
--- PHP Version: 7.2.12
+-- Complete Bus Ticket Booking System with Categorized Seating
+-- Version 3.0 - Student/Staff Seat Categories + Booking History + Driver Earnings
+-- Date: February 2026
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET AUTOCOMMIT = 0;
 START TRANSACTION;
 SET time_zone = "+00:00";
-
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -22,125 +17,41 @@ SET time_zone = "+00:00";
 -- Database: `bus_ticket`
 --
 
--- --------------------------------------------------------
+-- ========================================
+-- DROP EXISTING TABLES (IF UPDATING)
+-- ========================================
 
---
--- Table structure for table `buses`
---
+SET FOREIGN_KEY_CHECKS = 0;
 
-CREATE TABLE `buses` (
-  `id` int(5) NOT NULL,
-  `bname` varchar(25) NOT NULL,
-  `bus_no` varchar(25) NOT NULL,
-  `owner_id` int(5) NOT NULL,
-  `from_loc` varchar(20) NOT NULL,
-  `from_time` varchar(8) NOT NULL,
-  `to_loc` varchar(20) NOT NULL,
-  `to_time` varchar(8) NOT NULL,
-  `fare` int(5) NOT NULL,
-  `approved` tinyint(1) NOT NULL DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+DROP TABLE IF EXISTS `booking_history`;
+DROP TABLE IF EXISTS `driver_earnings`;
+DROP TABLE IF EXISTS `booking_holds`;
+DROP TABLE IF EXISTS `seat_templates`;
+DROP TABLE IF EXISTS `tickets`;
+DROP TABLE IF EXISTS `earnings`;
+DROP TABLE IF EXISTS `notices`;
+DROP TABLE IF EXISTS `buses`;
+DROP TABLE IF EXISTS `locations`;
+DROP TABLE IF EXISTS `users`;
 
---
--- Dumping data for table `buses`
---
+SET FOREIGN_KEY_CHECKS = 1;
 
-INSERT INTO `buses` (`id`, `bname`, `bus_no`, `owner_id`, `from_loc`, `from_time`, `to_loc`, `to_time`, `fare`, `approved`) VALUES
-(1, 'Hanif', 'NM-12456', 3, 'Naogaon', '10:30 PM', 'Dhaka', '05:00 AM', 500, 1),
-(2, 'Hanif', 'NM-12456', 3, 'Dhaka', '09:45 PM', 'Naogaon', '04:15 AM', 500, 0),
-(4, 'Himachal', 'BD-123456', 3, 'Dhaka', '10:30 AM', 'Rajshahi', '4:30 PM', 700, 0);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `earnings`
---
-
-CREATE TABLE `earnings` (
-  `id` int(5) NOT NULL,
-  `bus_id` int(5) NOT NULL,
-  `date` varchar(10) NOT NULL,
-  `ssold` int(3) NOT NULL DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `locations`
---
-
-CREATE TABLE `locations` (
-  `id` int(5) NOT NULL,
-  `name` varchar(25) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
---
--- Dumping data for table `locations`
---
-
-INSERT INTO `locations` (`id`, `name`) VALUES
-(1, 'Dhaka'),
-(2, 'Naogaon'),
-(3, 'Chittagong'),
-(4, 'Rajshahi');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `notices`
---
-
-CREATE TABLE `notices` (
-  `id` int(5) NOT NULL,
-  `recep` int(5) NOT NULL,
-  `message` varchar(120) NOT NULL,
-  `from` int(5) NOT NULL,
-  `title` varchar(30) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `tickets`
---
-
-CREATE TABLE `tickets` (
-  `id` int(5) NOT NULL,
-  `passenger_id` int(5) NOT NULL,
-  `bus_id` int(5) NOT NULL,
-  `jdate` varchar(25) NOT NULL,
-  `seats` varchar(120) NOT NULL,
-  `fare` int(10) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
---
--- Dumping data for table `tickets`
---
-
-INSERT INTO `tickets` (`id`, `passenger_id`, `bus_id`, `jdate`, `seats`, `fare`) VALUES
-(9, 2, 2, '04/08/2019', 'a:2:{i:0;s:2:\"D1\";i:1;s:2:\"D2\";}', 1050),
-(11, 2, 2, '05/08/2019', 'a:1:{i:0;s:2:\"E1\";}', 1050),
-(24, 2, 2, '06/08/2019', 'a:2:{i:0;s:2:\"D3\";i:1;s:2:\"D4\";}', 550),
-(25, 2, 2, '06/08/2019', 'a:1:{i:0;s:2:\"E4\";}', 550),
-(26, 5, 2, '06/08/2019', 'a:2:{i:0;s:2:\"C3\";i:1;s:2:\"C4\";}', 1050),
-(27, 2, 2, '07/08/2019', 'a:2:{i:0;s:2:\"E1\";i:1;s:2:\"E2\";}', 1050);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `users`
---
+-- ========================================
+-- TABLE: users
+-- ========================================
 
 CREATE TABLE `users` (
-  `id` int(5) NOT NULL,
+  `id` int(5) NOT NULL AUTO_INCREMENT,
   `uname` varchar(20) NOT NULL,
   `name` varchar(25) NOT NULL,
   `email` varchar(40) NOT NULL,
   `password` varchar(25) NOT NULL,
   `gender` enum('Male','Female','Other') NOT NULL,
-  `utype` enum('Admin','Owner','Passenger') NOT NULL,
+  `utype` enum('Admin','Owner','Passenger','Student','Staff') NOT NULL COMMENT 'Student=10% discount, Staff=5% discount',
   `address` varchar(120) NOT NULL,
-  `mobile` varchar(10) NOT NULL
+  `mobile` varchar(10) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uname` (`uname`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
@@ -152,126 +63,470 @@ INSERT INTO `users` (`id`, `uname`, `name`, `email`, `password`, `gender`, `utyp
 (2, 'deba', 'Debashish Sarker', 'dsarker333@gmail.com', '123456', 'Male', 'Passenger', '', '1000000000'),
 (3, 'oni', 'Onimesh', 'osarker@gmail.com', '123456', 'Male', 'Owner', '', '0000000000'),
 (4, 'hori', 'Habibur Hori', 'habiburaiub@gmail.com', '123456', 'Male', 'Owner', 'Kuril, Dhaka', '1700000000'),
-(5, 'rubel', 'Rubel', 'rubelmhr@gmail.com', '123456', 'Male', 'Passenger', 'Kuril', '1722222222');
+(5, 'rubel', 'Rubel', 'rubelmhr@gmail.com', '123456', 'Male', 'Passenger', 'Kuril', '1722222222'),
+(6, 'student1', 'John Student', 'student@example.com', '123456', 'Male', 'Student', 'Student Hostel, Dhaka', '1711111111'),
+(7, 'staff1', 'Jane Staff', 'staff@example.com', '123456', 'Female', 'Staff', 'Staff Quarter, Dhaka', '1722222222');
+
+-- ========================================
+-- TABLE: locations
+-- ========================================
+
+CREATE TABLE `locations` (
+  `id` int(5) NOT NULL AUTO_INCREMENT,
+  `name` varchar(25) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
--- Indexes for dumped tables
+-- Dumping data for table `locations`
 --
 
---
--- Indexes for table `buses`
---
-ALTER TABLE `buses`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_usr_bus` (`owner_id`);
+INSERT INTO `locations` (`id`, `name`) VALUES
+(1, 'Dhaka'),
+(2, 'Naogaon'),
+(3, 'Chittagong'),
+(4, 'Rajshahi'),
+(5, 'Sylhet'),
+(6, 'Khulna'),
+(7, 'Barisal');
+
+-- ========================================
+-- TABLE: buses (WITH SEAT CATEGORIES)
+-- ========================================
+
+CREATE TABLE `buses` (
+  `id` int(5) NOT NULL AUTO_INCREMENT,
+  `bname` varchar(25) NOT NULL,
+  `bus_no` varchar(25) NOT NULL,
+  `owner_id` int(5) NOT NULL,
+  `from_loc` varchar(20) NOT NULL,
+  `from_time` varchar(8) NOT NULL,
+  `to_loc` varchar(20) NOT NULL,
+  `to_time` varchar(8) NOT NULL,
+  `fare` int(5) NOT NULL,
+  `total_seats` int(3) NOT NULL DEFAULT 40 COMMENT 'Total number of seats in the bus',
+  `seat_layout` varchar(50) DEFAULT '10x4' COMMENT 'Seat layout format: ROWSxCOLUMNS (e.g., 10x4 = 10 rows, 4 columns)',
+  `student_seats` varchar(255) DEFAULT NULL COMMENT 'Comma-separated list of student-only seats (50%)',
+  `staff_seats` varchar(255) DEFAULT NULL COMMENT 'Comma-separated list of staff-only seats (25%)',
+  `general_seats` varchar(255) DEFAULT NULL COMMENT 'Comma-separated list of general seats (25%)',
+  `approved` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `fk_usr_bus` (`owner_id`),
+  CONSTRAINT `fk_usr_bus` FOREIGN KEY (`owner_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
--- Indexes for table `earnings`
---
-ALTER TABLE `earnings`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_ear_bus` (`bus_id`);
-
---
--- Indexes for table `locations`
---
-ALTER TABLE `locations`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indexes for table `notices`
---
-ALTER TABLE `notices`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_usrf_not` (`from`),
-  ADD KEY `fk_usrt_not` (`recep`);
-
---
--- Indexes for table `tickets`
---
-ALTER TABLE `tickets`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_usr_tic` (`passenger_id`),
-  ADD KEY `fk_bus_tic` (`bus_id`);
-
---
--- Indexes for table `users`
---
-ALTER TABLE `users`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `id` (`uname`);
-
---
--- AUTO_INCREMENT for dumped tables
+-- Dumping data for table `buses`
 --
 
---
--- AUTO_INCREMENT for table `buses`
---
-ALTER TABLE `buses`
-  MODIFY `id` int(5) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+INSERT INTO `buses` (`id`, `bname`, `bus_no`, `owner_id`, `from_loc`, `from_time`, `to_loc`, `to_time`, `fare`, `total_seats`, `seat_layout`, `student_seats`, `staff_seats`, `general_seats`, `approved`) VALUES
+(1, 'Hanif', 'NM-12456', 3, 'Naogaon', '10:30 PM', 'Dhaka', '05:00 AM', 500, 40, '10x4', 'A1,A2,A3,A4,B1,B2,B3,B4,C1,C2,C3,C4,D1,D2,D3,D4,E1,E2,E3,E4', 'F1,F2,F3,F4,G1,G2,G3,G4,H1,H2', 'H3,H4,I1,I2,I3,I4,J1,J2,J3,J4', 1),
+(2, 'Hanif', 'NM-12456', 3, 'Dhaka', '09:45 PM', 'Naogaon', '04:15 AM', 500, 40, '10x4', 'A1,A2,A3,A4,B1,B2,B3,B4,C1,C2,C3,C4,D1,D2,D3,D4,E1,E2,E3,E4', 'F1,F2,F3,F4,G1,G2,G3,G4,H1,H2', 'H3,H4,I1,I2,I3,I4,J1,J2,J3,J4', 1),
+(3, 'Green Line', 'GL-78901', 3, 'Dhaka', '08:00 AM', 'Chittagong', '02:00 PM', 700, 50, '13x4', 'A1,A2,A3,A4,B1,B2,B3,B4,C1,C2,C3,C4,D1,D2,D3,D4,E1,E2,E3,E4,F1,F2,F3,F4,G1,G2', 'G3,G4,H1,H2,H3,H4,I1,I2,I3,I4,J1,J2,J3', 'J4,K1,K2,K3,K4,L1,L2,L3,L4,M1,M2,M3,M4', 1),
+(4, 'Shyamoli', 'SH-55555', 4, 'Dhaka', '11:00 PM', 'Sylhet', '05:30 AM', 600, 30, '8x4', 'A1,A2,A3,A4,B1,B2,B3,B4,C1,C2,C3,C4,D1,D2,D3', 'D4,E1,E2,E3,E4,F1,F2,F3', 'F4,G1,G2,G3,G4,H1,H2,H3,H4', 1);
+
+-- ========================================
+-- TABLE: tickets (WITH BOOKING FEATURES)
+-- ========================================
+
+CREATE TABLE `tickets` (
+  `id` int(5) NOT NULL AUTO_INCREMENT,
+  `passenger_id` int(5) NOT NULL,
+  `bus_id` int(5) NOT NULL,
+  `jdate` varchar(25) NOT NULL,
+  `seats` varchar(120) NOT NULL,
+  `fare` int(10) NOT NULL,
+  `booking_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'When the booking was initiated',
+  `booking_expires` datetime NULL COMMENT 'When the booking hold expires (5 minutes after booking_time)',
+  `booking_confirmed` tinyint(1) NOT NULL DEFAULT 1 COMMENT '0 = on hold, 1 = confirmed',
+  `seat_category` enum('student','staff','general','mixed') DEFAULT 'general' COMMENT 'Category of seats booked',
+  PRIMARY KEY (`id`),
+  KEY `fk_usr_tic` (`passenger_id`),
+  KEY `fk_bus_tic` (`bus_id`),
+  KEY `idx_booking_time` (`booking_time`),
+  KEY `idx_jdate_bus` (`jdate`, `bus_id`),
+  CONSTRAINT `fk_usr_tic` FOREIGN KEY (`passenger_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_bus_tic` FOREIGN KEY (`bus_id`) REFERENCES `buses` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- ========================================
+-- TABLE: seat_templates
+-- ========================================
+
+CREATE TABLE `seat_templates` (
+  `id` int(5) NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) NOT NULL COMMENT 'Template name (e.g., Small Bus, Large Bus)',
+  `total_seats` int(3) NOT NULL COMMENT 'Total number of seats',
+  `layout` varchar(50) NOT NULL COMMENT 'Seat layout (e.g., 10x4)',
+  `description` varchar(255) DEFAULT NULL COMMENT 'Template description',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
--- AUTO_INCREMENT for table `earnings`
---
-ALTER TABLE `earnings`
-  MODIFY `id` int(5) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `locations`
---
-ALTER TABLE `locations`
-  MODIFY `id` int(5) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
-
---
--- AUTO_INCREMENT for table `notices`
---
-ALTER TABLE `notices`
-  MODIFY `id` int(5) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `tickets`
---
-ALTER TABLE `tickets`
-  MODIFY `id` int(5) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
-
---
--- AUTO_INCREMENT for table `users`
---
-ALTER TABLE `users`
-  MODIFY `id` int(5) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
-
---
--- Constraints for dumped tables
+-- Dumping data for table `seat_templates`
 --
 
---
--- Constraints for table `buses`
---
-ALTER TABLE `buses`
-  ADD CONSTRAINT `fk_usr_bus` FOREIGN KEY (`owner_id`) REFERENCES `users` (`id`);
+INSERT INTO `seat_templates` (`name`, `total_seats`, `layout`, `description`) VALUES
+('Small Bus', 20, '5x4', '20 seats in 5 rows, 4 seats per row - Compact bus for short routes'),
+('Standard Bus', 40, '10x4', '40 seats in 10 rows, 4 seats per row - Most common configuration'),
+('Large Bus', 50, '13x4', '50 seats in 13 rows (includes 2 back row seats) - High capacity'),
+('Luxury Coach', 30, '8x4', '30 seats in 8 rows, spacious seating - Premium comfort');
 
---
--- Constraints for table `earnings`
---
-ALTER TABLE `earnings`
-  ADD CONSTRAINT `fk_ear_bus` FOREIGN KEY (`bus_id`) REFERENCES `buses` (`id`);
+-- ========================================
+-- TABLE: booking_history
+-- ========================================
 
---
--- Constraints for table `notices`
---
-ALTER TABLE `notices`
-  ADD CONSTRAINT `fk_usrf_not` FOREIGN KEY (`from`) REFERENCES `users` (`id`),
-  ADD CONSTRAINT `fk_usrt_not` FOREIGN KEY (`recep`) REFERENCES `users` (`id`);
+CREATE TABLE `booking_history` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(5) NOT NULL COMMENT 'User who made the booking (passenger, student, or staff)',
+  `user_type` enum('Passenger','Student','Staff') NOT NULL COMMENT 'Type of user',
+  `ticket_id` int(5) DEFAULT NULL COMMENT 'Reference to ticket if booking was confirmed',
+  `bus_id` int(5) NOT NULL,
+  `bus_name` varchar(25) NOT NULL,
+  `bus_no` varchar(25) NOT NULL,
+  `from_loc` varchar(20) NOT NULL,
+  `to_loc` varchar(20) NOT NULL,
+  `jdate` varchar(25) NOT NULL COMMENT 'Journey date',
+  `seats_booked` varchar(255) NOT NULL COMMENT 'Serialized array of seat numbers',
+  `seat_count` int(3) NOT NULL COMMENT 'Number of seats booked',
+  `seat_category` enum('student','staff','general','mixed') DEFAULT 'general',
+  `fare_per_seat` decimal(10,2) NOT NULL,
+  `total_fare` decimal(10,2) NOT NULL,
+  `discount_percent` int(3) DEFAULT 0 COMMENT 'Discount percentage applied',
+  `final_amount` decimal(10,2) NOT NULL COMMENT 'Amount after discount',
+  `booking_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `booking_status` enum('pending','confirmed','cancelled','expired') NOT NULL DEFAULT 'confirmed',
+  `payment_status` enum('pending','paid','refunded') DEFAULT 'paid',
+  `cancellation_time` datetime DEFAULT NULL,
+  `cancellation_reason` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_bus_id` (`bus_id`),
+  KEY `idx_jdate` (`jdate`),
+  KEY `idx_booking_time` (`booking_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
---
--- Constraints for table `tickets`
---
-ALTER TABLE `tickets`
-  ADD CONSTRAINT `fk_bus_tic` FOREIGN KEY (`bus_id`) REFERENCES `buses` (`id`),
-  ADD CONSTRAINT `fk_usr_tic` FOREIGN KEY (`passenger_id`) REFERENCES `users` (`id`);
+-- ========================================
+-- TABLE: driver_earnings
+-- ========================================
+
+CREATE TABLE `driver_earnings` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `owner_id` int(5) NOT NULL COMMENT 'Bus owner/driver ID',
+  `bus_id` int(5) NOT NULL,
+  `jdate` varchar(25) NOT NULL,
+  `total_seats_sold` int(3) NOT NULL DEFAULT 0,
+  `student_seats_sold` int(3) NOT NULL DEFAULT 0,
+  `staff_seats_sold` int(3) NOT NULL DEFAULT 0,
+  `general_seats_sold` int(3) NOT NULL DEFAULT 0,
+  `total_revenue` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `student_revenue` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `staff_revenue` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `general_revenue` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `commission_rate` decimal(5,2) DEFAULT 10.00 COMMENT 'Platform commission percentage',
+  `commission_amount` decimal(10,2) DEFAULT 0.00,
+  `net_earnings` decimal(10,2) NOT NULL DEFAULT 0.00 COMMENT 'Revenue minus commission',
+  `last_updated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_bus_date` (`bus_id`, `jdate`),
+  KEY `idx_owner_id` (`owner_id`),
+  KEY `idx_jdate` (`jdate`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- ========================================
+-- TABLE: booking_holds
+-- ========================================
+
+CREATE TABLE `booking_holds` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `passenger_id` int(5) NOT NULL COMMENT 'User who is holding the seats',
+  `bus_id` int(5) NOT NULL COMMENT 'Bus being booked',
+  `jdate` varchar(25) NOT NULL COMMENT 'Journey date',
+  `seats` varchar(120) NOT NULL COMMENT 'JSON array of seat numbers',
+  `hold_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'When the hold was created',
+  `expires_at` datetime NOT NULL COMMENT 'When the hold expires (hold_time + 5 minutes)',
+  `status` enum('active','expired','confirmed','cancelled') NOT NULL DEFAULT 'active' COMMENT 'Hold status',
+  PRIMARY KEY (`id`),
+  KEY `fk_usr_hold` (`passenger_id`),
+  KEY `fk_bus_hold` (`bus_id`),
+  KEY `idx_expires` (`expires_at`, `status`),
+  CONSTRAINT `fk_usr_hold` FOREIGN KEY (`passenger_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_bus_hold` FOREIGN KEY (`bus_id`) REFERENCES `buses` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- ========================================
+-- TABLE: earnings (Legacy - kept for compatibility)
+-- ========================================
+
+CREATE TABLE `earnings` (
+  `id` int(5) NOT NULL AUTO_INCREMENT,
+  `bus_id` int(5) NOT NULL,
+  `date` varchar(10) NOT NULL,
+  `ssold` int(3) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `fk_ear_bus` (`bus_id`),
+  CONSTRAINT `fk_ear_bus` FOREIGN KEY (`bus_id`) REFERENCES `buses` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- ========================================
+-- TABLE: notices
+-- ========================================
+
+CREATE TABLE `notices` (
+  `id` int(5) NOT NULL AUTO_INCREMENT,
+  `recep` int(5) NOT NULL,
+  `message` varchar(120) NOT NULL,
+  `from` int(5) NOT NULL,
+  `title` varchar(30) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_usrf_not` (`from`),
+  KEY `fk_usrt_not` (`recep`),
+  CONSTRAINT `fk_usrf_not` FOREIGN KEY (`from`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_usrt_not` FOREIGN KEY (`recep`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- ========================================
+-- TRIGGERS: Automatic Booking History
+-- ========================================
+
+DELIMITER $$
+
+DROP TRIGGER IF EXISTS `after_ticket_insert`$$
+CREATE TRIGGER `after_ticket_insert` AFTER INSERT ON `tickets`
+FOR EACH ROW
+BEGIN
+  DECLARE v_user_type VARCHAR(20);
+  DECLARE v_bus_name VARCHAR(25);
+  DECLARE v_bus_no VARCHAR(25);
+  DECLARE v_from_loc VARCHAR(20);
+  DECLARE v_to_loc VARCHAR(20);
+  DECLARE v_seat_count INT;
+  DECLARE v_discount DECIMAL(5,2);
+  
+  -- Get user type
+  SELECT utype INTO v_user_type FROM users WHERE id = NEW.passenger_id;
+  
+  -- Get bus details
+  SELECT bname, bus_no, from_loc, to_loc 
+  INTO v_bus_name, v_bus_no, v_from_loc, v_to_loc
+  FROM buses WHERE id = NEW.bus_id;
+  
+  -- Count seats (estimate from serialized data length)
+  SET v_seat_count = FLOOR((LENGTH(NEW.seats) - LENGTH(REPLACE(NEW.seats, '";', ''))) / 2);
+  IF v_seat_count = 0 THEN
+    SET v_seat_count = 1;
+  END IF;
+  
+  -- Calculate discount
+  SET v_discount = CASE 
+    WHEN v_user_type = 'Student' THEN 10
+    WHEN v_user_type = 'Staff' THEN 5
+    ELSE 0
+  END;
+  
+  -- Insert into booking history
+  INSERT INTO booking_history (
+    user_id, user_type, ticket_id, bus_id, bus_name, bus_no,
+    from_loc, to_loc, jdate, seats_booked, seat_count, seat_category,
+    fare_per_seat, total_fare, discount_percent, final_amount,
+    booking_time, booking_status, payment_status
+  ) VALUES (
+    NEW.passenger_id,
+    v_user_type,
+    NEW.id,
+    NEW.bus_id,
+    v_bus_name,
+    v_bus_no,
+    v_from_loc,
+    v_to_loc,
+    NEW.jdate,
+    NEW.seats,
+    v_seat_count,
+    COALESCE(NEW.seat_category, 'general'),
+    NEW.fare / v_seat_count,
+    NEW.fare,
+    v_discount,
+    NEW.fare,
+    NEW.booking_time,
+    IF(NEW.booking_confirmed = 1, 'confirmed', 'pending'),
+    'paid'
+  );
+END$$
+
+DELIMITER ;
+
+-- ========================================
+-- STORED PROCEDURES
+-- ========================================
+
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `calculate_driver_earnings`$$
+CREATE PROCEDURE `calculate_driver_earnings`(
+  IN p_bus_id INT,
+  IN p_jdate VARCHAR(25)
+)
+BEGIN
+  DECLARE v_owner_id INT;
+  DECLARE v_total_seats INT DEFAULT 0;
+  DECLARE v_student_seats INT DEFAULT 0;
+  DECLARE v_staff_seats INT DEFAULT 0;
+  DECLARE v_general_seats INT DEFAULT 0;
+  DECLARE v_total_revenue DECIMAL(10,2) DEFAULT 0.00;
+  DECLARE v_student_revenue DECIMAL(10,2) DEFAULT 0.00;
+  DECLARE v_staff_revenue DECIMAL(10,2) DEFAULT 0.00;
+  DECLARE v_general_revenue DECIMAL(10,2) DEFAULT 0.00;
+  DECLARE v_commission DECIMAL(10,2) DEFAULT 0.00;
+  DECLARE v_net DECIMAL(10,2) DEFAULT 0.00;
+  
+  -- Get owner ID
+  SELECT owner_id INTO v_owner_id FROM buses WHERE id = p_bus_id;
+  
+  -- Calculate seats and revenue by category
+  SELECT 
+    COALESCE(COUNT(*), 0) as total,
+    COALESCE(SUM(CASE WHEN seat_category = 'student' THEN seat_count ELSE 0 END), 0) as student,
+    COALESCE(SUM(CASE WHEN seat_category = 'staff' THEN seat_count ELSE 0 END), 0) as staff,
+    COALESCE(SUM(CASE WHEN seat_category IN ('general', 'mixed') THEN seat_count ELSE 0 END), 0) as general_cnt,
+    COALESCE(SUM(final_amount), 0) as total_rev,
+    COALESCE(SUM(CASE WHEN seat_category = 'student' THEN final_amount ELSE 0 END), 0) as student_rev,
+    COALESCE(SUM(CASE WHEN seat_category = 'staff' THEN final_amount ELSE 0 END), 0) as staff_rev,
+    COALESCE(SUM(CASE WHEN seat_category IN ('general', 'mixed') THEN final_amount ELSE 0 END), 0) as general_rev
+  INTO v_total_seats, v_student_seats, v_staff_seats, v_general_seats,
+       v_total_revenue, v_student_revenue, v_staff_revenue, v_general_revenue
+  FROM booking_history
+  WHERE bus_id = p_bus_id AND jdate = p_jdate AND booking_status = 'confirmed';
+  
+  -- Calculate commission (10%)
+  SET v_commission = v_total_revenue * 0.10;
+  SET v_net = v_total_revenue - v_commission;
+  
+  -- Insert or update driver earnings
+  INSERT INTO driver_earnings (
+    owner_id, bus_id, jdate, total_seats_sold,
+    student_seats_sold, staff_seats_sold, general_seats_sold,
+    total_revenue, student_revenue, staff_revenue, general_revenue,
+    commission_amount, net_earnings
+  ) VALUES (
+    v_owner_id, p_bus_id, p_jdate, v_total_seats,
+    v_student_seats, v_staff_seats, v_general_seats,
+    v_total_revenue, v_student_revenue, v_staff_revenue, v_general_revenue,
+    v_commission, v_net
+  )
+  ON DUPLICATE KEY UPDATE
+    total_seats_sold = v_total_seats,
+    student_seats_sold = v_student_seats,
+    staff_seats_sold = v_staff_seats,
+    general_seats_sold = v_general_seats,
+    total_revenue = v_total_revenue,
+    student_revenue = v_student_revenue,
+    staff_revenue = v_staff_revenue,
+    general_revenue = v_general_revenue,
+    commission_amount = v_commission,
+    net_earnings = v_net;
+END$$
+
+DELIMITER ;
+
+-- ========================================
+-- VIEWS
+-- ========================================
+
+DROP VIEW IF EXISTS `v_booking_history_detail`;
+CREATE VIEW `v_booking_history_detail` AS
+SELECT 
+  bh.*,
+  u.uname as username,
+  u.email as user_email,
+  u.mobile as user_mobile,
+  b.from_time,
+  b.to_time,
+  b.fare as current_fare
+FROM booking_history bh
+JOIN users u ON bh.user_id = u.id
+JOIN buses b ON bh.bus_id = b.id
+ORDER BY bh.booking_time DESC;
+
+-- ========================================
+-- AUTO_INCREMENT RESET
+-- ========================================
+
+ALTER TABLE `buses` AUTO_INCREMENT=5;
+ALTER TABLE `users` AUTO_INCREMENT=8;
+ALTER TABLE `locations` AUTO_INCREMENT=8;
+ALTER TABLE `seat_templates` AUTO_INCREMENT=5;
+ALTER TABLE `tickets` AUTO_INCREMENT=1;
+ALTER TABLE `booking_history` AUTO_INCREMENT=1;
+ALTER TABLE `driver_earnings` AUTO_INCREMENT=1;
+ALTER TABLE `booking_holds` AUTO_INCREMENT=1;
+ALTER TABLE `earnings` AUTO_INCREMENT=1;
+ALTER TABLE `notices` AUTO_INCREMENT=1;
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+-- ========================================
+-- VERIFICATION QUERIES
+-- ========================================
+
+-- Check buses with seat categories:
+SELECT 
+  id, 
+  bname, 
+  total_seats,
+  CASE 
+    WHEN student_seats IS NOT NULL THEN LENGTH(student_seats) - LENGTH(REPLACE(student_seats, ',', '')) + 1
+    ELSE 0 
+  END as student_count,
+  CASE 
+    WHEN staff_seats IS NOT NULL THEN LENGTH(staff_seats) - LENGTH(REPLACE(staff_seats, ',', '')) + 1
+    ELSE 0 
+  END as staff_count,
+  CASE 
+    WHEN general_seats IS NOT NULL THEN LENGTH(general_seats) - LENGTH(REPLACE(general_seats, ',', '')) + 1
+    ELSE 0 
+  END as general_count,
+  approved
+FROM buses;
+
+-- Check users by type:
+SELECT utype, COUNT(*) as count FROM users GROUP BY utype;
+
+-- Check available templates:
+SELECT * FROM seat_templates;
+
+-- ========================================
+-- INSTALLATION NOTES
+-- ========================================
+-- 
+-- This SQL file includes:
+-- 1. All original tables (users, buses, tickets, locations, etc.)
+-- 2. NEW: Seat categorization (student_seats, staff_seats, general_seats)
+-- 3. NEW: booking_history table for user booking tracking
+-- 4. NEW: driver_earnings table for owner analytics
+-- 5. NEW: Trigger to auto-populate booking history
+-- 6. NEW: Stored procedure to calculate driver earnings
+-- 7. Sample data with categorized buses
+-- 8. Test accounts (admin, student1, staff1)
+--
+-- FEATURES:
+-- - Student seats (50% of bus) - 10% discount
+-- - Staff seats (25% of bus) - 5% discount
+-- - General seats (25% of bus) - Regular fare
+-- - Students can book staff seats in last 2 minutes of timer
+-- - Complete booking history with filters
+-- - Driver earnings by seat category
+-- - 10% platform commission auto-calculated
+--
+-- TO INSTALL:
+-- mysql -u root -p bus_ticket < bus_ticket_complete_categorized.sql
+--
+-- DEFAULT LOGINS:
+-- Admin: admin / admin
+-- Student: student1 / 123456 (10% discount)
+-- Staff: staff1 / 123456 (5% discount)
+-- Owner: oni / 123456
+-- ========================================

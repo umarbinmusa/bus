@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AJAX Test - Seat Booking Debug</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .test-box { background: #f0f0f0; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        pre { background: white; padding: 10px; border: 1px solid #ccc; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Bus Ticket Booking - AJAX Debug Tool</h1>
+    
+    <div class="test-box info">
+        <h3>This page will help you find why seat selection is stuck on loading</h3>
+        <p>Click each test below in order:</p>
+    </div>
+
+    <!-- Test 1: jQuery -->
+    <div class="test-box">
+        <h3>Test 1: Check if jQuery is Loaded</h3>
+        <button onclick="test1()">Run Test 1</button>
+        <div id="test1-result"></div>
+    </div>
+
+    <!-- Test 2: Database Connection -->
+    <div class="test-box">
+        <h3>Test 2: Check Database Connection</h3>
+        <button onclick="test2()">Run Test 2</button>
+        <div id="test2-result"></div>
+    </div>
+
+    <!-- Test 3: Ajax File Path -->
+    <div class="test-box">
+        <h3>Test 3: Check AJAX File Path</h3>
+        <button onclick="test3()">Run Test 3</button>
+        <div id="test3-result"></div>
+    </div>
+
+    <!-- Test 4: Locations API -->
+    <div class="test-box">
+        <h3>Test 4: Test Locations API Call</h3>
+        <button onclick="test4()">Run Test 4</button>
+        <div id="test4-result"></div>
+    </div>
+
+    <!-- Test 5: Show Seats API -->
+    <div class="test-box">
+        <h3>Test 5: Test Show Seats API Call</h3>
+        <p>Enter Bus ID: <input type="number" id="busId" value="1" /> 
+        Date: <input type="text" id="jdate" value="08/02/2026" placeholder="DD/MM/YYYY" /></p>
+        <button onclick="test5()">Run Test 5</button>
+        <div id="test5-result"></div>
+    </div>
+
+    <!-- Test 6: Console Errors -->
+    <div class="test-box">
+        <h3>Test 6: Check Browser Console</h3>
+        <p>Press <strong>F12</strong> to open Developer Tools, then click the <strong>Console</strong> tab.</p>
+        <p>Look for any red error messages and copy them here:</p>
+        <textarea id="consoleErrors" style="width: 100%; height: 100px;" placeholder="Paste console errors here..."></textarea>
+        <button onclick="analyzeConsole()">Analyze Errors</button>
+        <div id="test6-result"></div>
+    </div>
+
+    <script>
+    // Test 1: jQuery
+    function test1() {
+        var result = document.getElementById('test1-result');
+        if (typeof jQuery !== 'undefined') {
+            result.innerHTML = '<div class="success">✓ jQuery is loaded! Version: ' + jQuery.fn.jquery + '</div>';
+        } else {
+            result.innerHTML = '<div class="error">✗ jQuery is NOT loaded! This is the problem.<br><strong>Fix:</strong> Add this to your buy_ticket.php before closing &lt;/head&gt; tag:<br><pre>&lt;script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"&gt;&lt;/script&gt;</pre></div>';
+        }
+    }
+
+    // Test 2: Database
+    function test2() {
+        var result = document.getElementById('test2-result');
+        result.innerHTML = '<p>Testing database connection...</p>';
+        
+        $.ajax({
+            url: 'test_db.php',
+            type: 'GET',
+            success: function(response) {
+                result.innerHTML = '<div class="success">✓ Database test response:<br><pre>' + response + '</pre></div>';
+            },
+            error: function(xhr, status, error) {
+                result.innerHTML = '<div class="error">✗ Database test failed!<br>Status: ' + status + '<br>Error: ' + error + '<br><strong>Fix:</strong> Create test_db.php or check inc/database.php exists</div>';
+            }
+        });
+    }
+
+    // Test 3: AJAX path
+    function test3() {
+        var result = document.getElementById('test3-result');
+        result.innerHTML = '<p>Testing AJAX file path...</p>';
+        
+        // Try different paths
+        var paths = ['inc/ajax.php', '/inc/ajax.php', 'ajax.php'];
+        var foundPath = null;
+        
+        paths.forEach(function(path) {
+            $.ajax({
+                url: path + '?type=test',
+                type: 'GET',
+                async: false,
+                success: function() {
+                    foundPath = path;
+                },
+                error: function() {
+                    // Continue trying
+                }
+            });
+        });
+        
+        if (foundPath) {
+            result.innerHTML = '<div class="success">✓ AJAX file found at: <strong>' + foundPath + '</strong></div>';
+        } else {
+            result.innerHTML = '<div class="error">✗ ajax.php not found in any common location!<br><strong>Fix:</strong> Make sure ajax.php is in the inc/ folder</div>';
+        }
+    }
+
+    // Test 4: Locations
+    function test4() {
+        var result = document.getElementById('test4-result');
+        result.innerHTML = '<p>Testing locations API...</p>';
+        
+        $.ajax({
+            url: 'inc/ajax.php?type=locations',
+            type: 'GET',
+            success: function(response) {
+                try {
+                    var data = JSON.parse(response);
+                    result.innerHTML = '<div class="success">✓ Locations API working!<br>Found locations: ' + data.join(', ') + '</div>';
+                } catch(e) {
+                    result.innerHTML = '<div class="error">✗ Response is not valid JSON:<br><pre>' + response + '</pre></div>';
+                }
+            },
+            error: function(xhr, status, error) {
+                result.innerHTML = '<div class="error">✗ Locations API failed!<br>Status: ' + status + '<br>Error: ' + error + '<br>Response: <pre>' + xhr.responseText + '</pre></div>';
+            }
+        });
+    }
+
+    // Test 5: Show Seats
+    function test5() {
+        var result = document.getElementById('test5-result');
+        var busId = document.getElementById('busId').value;
+        var jdate = document.getElementById('jdate').value;
+        
+        result.innerHTML = '<p>Testing show seats API for Bus ID: ' + busId + ', Date: ' + jdate + '...</p>';
+        
+        $.ajax({
+            url: 'inc/ajax.php?type=showseats&bus=' + busId + '&date=' + jdate,
+            type: 'GET',
+            success: function(response) {
+                result.innerHTML = '<div class="success">✓ Show Seats API responded!<br><strong>Response preview:</strong><br><pre>' + response.substring(0, 500) + '...</pre><br><a href="#" onclick="showFullResponse(\'' + response.replace(/'/g, "\\'") + '\'); return false;">View Full Response</a></div>';
+            },
+            error: function(xhr, status, error) {
+                result.innerHTML = '<div class="error">✗ Show Seats API failed!<br>Status: ' + status + '<br>Error: ' + error + '<br><strong>Response:</strong><br><pre>' + xhr.responseText + '</pre><br><strong>Possible fixes:</strong><ul><li>Check if bus ID ' + busId + ' exists in database</li><li>Check if buses table has total_seats and seat_layout columns</li><li>Look at inc/ajax.php for PHP errors</li></ul></div>';
+            }
+        });
+    }
+
+    function showFullResponse(response) {
+        var win = window.open('', 'Response', 'width=800,height=600');
+        win.document.write('<html><head><title>Full Response</title></head><body><pre>' + response + '</pre></body></html>');
+    }
+
+    // Test 6: Console analysis
+    function analyzeConsole() {
+        var errors = document.getElementById('consoleErrors').value;
+        var result = document.getElementById('test6-result');
+        
+        if (!errors.trim()) {
+            result.innerHTML = '<div class="info">Please paste any console errors above</div>';
+            return;
+        }
+        
+        var analysis = '<div class="info"><h4>Error Analysis:</h4><ul>';
+        
+        if (errors.includes('jQuery') || errors.includes('$ is not defined')) {
+            analysis += '<li><strong>jQuery not loaded</strong> - Add jQuery script tag to your page</li>';
+        }
+        if (errors.includes('404') || errors.includes('Not Found')) {
+            analysis += '<li><strong>File not found</strong> - Check file paths in your AJAX calls</li>';
+        }
+        if (errors.includes('CORS')) {
+            analysis += '<li><strong>CORS error</strong> - Make sure you\'re accessing the site through localhost or proper domain</li>';
+        }
+        if (errors.includes('syntax error') || errors.includes('Unexpected token')) {
+            analysis += '<li><strong>JavaScript syntax error</strong> - Check your JS code for typos</li>';
+        }
+        if (errors.includes('undefined')) {
+            analysis += '<li><strong>Undefined variable/function</strong> - Check that all variables are declared</li>';
+        }
+        
+        analysis += '</ul></div>';
+        result.innerHTML = analysis;
+    }
+
+    console.log('Debug tool loaded. Click the tests above in order.');
+    </script>
+
+    <hr>
+    <h3>Quick Fixes Checklist:</h3>
+    <div class="test-box info">
+        <ol>
+            <li>✓ Run all tests above</li>
+            <li>✓ Make sure you're using <strong>inc/ajax_debug.php</strong> (copy it to inc/ajax.php)</li>
+            <li>✓ Check Apache/PHP error logs for detailed errors</li>
+            <li>✓ Make sure database has all required columns (run bus_ticket_complete.sql)</li>
+            <li>✓ Clear browser cache (Ctrl+Shift+Delete)</li>
+            <li>✓ Try in Incognito/Private mode</li>
+        </ol>
+    </div>
+</body>
+</html>

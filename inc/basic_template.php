@@ -17,7 +17,7 @@ function t_navbar() {
 echo '
 <div class="navbar fixed-top navbar-default header">
 <div class="container-fluid">
-	<h3>Bus Ticket Booking System</h3>
+	<h3>ABU BUS Ticket Booking System</h3>
 	<div class="navbar-right"><form action="index.php" method="post" class="form-inline">
 		<input type="text" name="uname" placeholder="Username" class="form-control-sm mr-1"/>
 		<input type="password" name="upass" placeholder="Password" class=" form-control-sm mr-1"/>
@@ -29,7 +29,7 @@ function t_login_nav() {
 	echo '
 <div class="navbar fixed-top navbar-default header">
 <div class="container-fluid">
-	<h3>Bus Ticket Booking System</h3>
+	<h3>ABU Bus Ticket Booking System</h3>
 	<div class="navbar-right">Welcome, '.$_SESSION['user']['uname'].' <a href="/index.php?logout=1"><button class="btn btn-success ml-3 btn-sm">Logout</button></a></div>
 </div></div>';
 }
@@ -87,7 +87,6 @@ function t_footer() {
 </div>
 <div class="footer">
 	<div class="row p-4">
-		<div class="col-md-4">BTBS, owned and operated by Uradhura Limited, is a premium online and on-demand service provider committed to make your life convenient, easier and smarter.<br/>© 2015-2019 BTBS · All Rights Reserved</div>
 		<div class="col-md-4 text-center">
 		<ul class="list-null">
             <li><a href="#">About Us</a></li>

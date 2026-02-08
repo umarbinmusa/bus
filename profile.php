@@ -9,11 +9,25 @@ require_once 'inc/database.php';
 
 if (isset($_POST['edit'])) {
 	$conn = initDB();
+	
+	// Prepare passenger category update
+	$passenger_category_sql = '';
+	if($_SESSION['user']['utype'] == 'Passenger' && isset($_POST['passenger_category'])) {
+		$passenger_category_sql = ", passenger_category='".$_POST['passenger_category']."'";
+	}
+	
 	$sql = "update users set name='".$_POST['name']."', email='".$_POST['email']."', gender='".$_POST['gender']."', address='".$_POST['address'];
 	$sql .= "', mobile='".$_POST['mobile']."'".((!isset($_POST['password']) || $_POST['password'] == "") ? " " : ", password='".$_POST['password']."' ");
-	$sql .= "where id=".$_SESSION['user']['id'];
-	if ($conn->query($sql))
+	$sql .= $passenger_category_sql;
+	$sql .= " where id=".$_SESSION['user']['id'];
+	
+	if ($conn->query($sql)) {
 		$ok = "ok";
+		// Update session if passenger category changed
+		if($_SESSION['user']['utype'] == 'Passenger' && isset($_POST['passenger_category'])) {
+			$_SESSION['user']['passenger_category'] = $_POST['passenger_category'];
+		}
+	}
 	else {
 		$ok = $sql . "<br/>" .$conn->error;
 	}
@@ -69,10 +83,24 @@ else
 	    <div class="form-group row">
 	      <label class="col-form-legend col-sm-2" for="gender">Gender</label>
 	      <div class="col-sm-7 px-5">
-	        <input class="form-check-input" type="radio" name="gender" id="radioMale" value="1" <?php echo ($userinfo['gender'] == 'Male') ? 'checked' : '';?>> Male <br/>
-            <input class="form-check-input" type="radio" name="gender" id="radioFemale" value="2"<?php echo ($userinfo['gender'] == 'Female') ? 'checked' : '';?>> Female
+	        <input class="form-check-input" type="radio" name="gender" id="radioMale" value="Male" <?php echo ($userinfo['gender'] == 'Male') ? 'checked' : '';?>> Male <br/>
+            <input class="form-check-input" type="radio" name="gender" id="radioFemale" value="Female"<?php echo ($userinfo['gender'] == 'Female') ? 'checked' : '';?>> Female
 	      </div>
 	    </div>
+	    
+	    <?php if($_SESSION['user']['utype'] == 'Passenger'): ?>
+	    <!-- NEW: Passenger Category in Edit Form -->
+	    <div class="form-group row">
+	      <label class="col-form-legend col-sm-2" for="passenger_cat">Passenger Type</label>
+	      <div class="col-sm-7 px-5">
+	        <input class="form-check-input" type="radio" name="passenger_category" value="Student" 
+	          <?php echo ($userinfo['passenger_category'] == 'Student') ? 'checked' : '';?>> Student <br/>
+            <input class="form-check-input" type="radio" name="passenger_category" value="Staff" 
+              <?php echo ($userinfo['passenger_category'] == 'Staff') ? 'checked' : '';?>> Staff
+	      </div>
+	    </div>
+	    <?php endif; ?>
+	    
 	    <div class="form-group row">
 	      <label for="address" class="col-sm-2 col-form-label">Address</label>
 	      <div class="col-sm-7">
@@ -123,7 +151,7 @@ else
 				}
 			});
 			$("#inputPassword").keyup(function() {
-				if ($(this).val().length >= 6) {
+				if ($(this).val().length >= 6 || $(this).val().length == 0) {
 					$("#infoPass").html(' ');
 				}
 				else {
@@ -145,10 +173,6 @@ else
 				else {
 					$("#infoMobile").html('<span class="text-danger">Invalid Number</span>');
 				}
-			});
-			$("#editForm").submit(function() {
-				if (invalid != -5) 
-					event.preventDefault();
 			});
 			$("#editButton").click(function() {
 				$("#editModal").show();
@@ -175,7 +199,7 @@ else
 	?>
 </div>
 <div class="form-group row">
-	      <label for="uname" class="col-sm-2 col-form-label">Userame</label>
+	      <label for="uname" class="col-sm-2 col-form-label">Username</label>
 	      <div class="col-sm-9">
 	        <?php echo $_SESSION['user']['uname'];?>
 	      </div>
@@ -204,6 +228,17 @@ else
 		  <?php echo $_SESSION['user']['utype'];?>
 	      </div>
 	    </div>
+	    
+	    <?php if($_SESSION['user']['utype'] == 'Passenger'): ?>
+	    <!-- NEW: Display Passenger Category -->
+	    <div class="form-group row">
+	      <label class="col-form-legend col-sm-2" for="passenger_cat">Passenger Type</label>
+	      <div class="col-sm-9">
+		  <?php echo $userinfo['passenger_category'] ? $userinfo['passenger_category'] : 'Not Set'; ?>
+	      </div>
+	    </div>
+	    <?php endif; ?>
+	    
 	    <div class="form-group row">
 	      <label for="address" class="col-sm-2 col-form-label">Address</label>
 	      <div class="col-sm-9">
@@ -213,7 +248,7 @@ else
 	    <div class="form-group row">
 	      <label for="mobile" class="col-sm-2 col-form-label">Mobile</label>
 	      <div class="col-sm-9 input-group">
-		  +880<?php echo $userinfo['mobile'];?>
+		  +234<?php echo $userinfo['mobile'];?>
 	      </div>
 	    </div>
 	    <div class="form-group row">

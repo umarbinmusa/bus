@@ -5,7 +5,7 @@ if (isset($_GET['logout'])) {
 	session_destroy();
 }
 elseif (isset($_SESSION['user'])) {
-	if ($_SESSION['user']['utype'] == "Passenger") {
+	if (in_array($_SESSION['user']['utype'], ["Passenger", "Student", "Staff"])) {
 		header("Location: buy_ticket.php");
 	}
 	elseif ($_SESSION['user']['utype'] == "Owner") {
@@ -59,7 +59,7 @@ t_navbar();
 		<?php
 			if ($acc!="") {
 				if ($acc == "ok") {
-					echo '<div class="alert alert-success">Account <strong>Success</strong>fully Created!</div>';
+					echo '<div class="alert alert-success">Account <strong>Success</strong>fully Created!<br/>Please login to continue.</div>';
 				}
 				else {
 					echo '<div class="alert alert-danger"><strong>Error: </strong>'.$acc.'</div>';
@@ -71,43 +71,45 @@ t_navbar();
 	    <div class="form-group row">
 	      <label for="uname" class="col-sm-2 col-form-label">Username</label>
 	      <div class="col-sm-7">
-	        <input name="uname" type="text" class="form-control" id="inputUname" placeholder="Username"/>
+	        <input name="uname" type="text" class="form-control" id="inputUname" placeholder="Username" required/>
 	      </div>
 		  <div class="col-sm-2" id="infoUname"></div>
 	    </div>
 	    <div class="form-group row">
 	      <label for="name" class="col-sm-2 col-form-label">Name</label>
 	      <div class="col-sm-7">
-	        <input name="name" type="text" class="form-control" id="inputName" placeholder="Full Name"/>
+	        <input name="name" type="text" class="form-control" id="inputName" placeholder="Full Name" required/>
 	      </div>
 		  <div class="col-sm-2" id="infoName"></div>
 	    </div>
 	    <div class="form-group row">
 	      <label for="email" class="col-sm-2 col-form-label">Email</label>
 	      <div class="col-sm-7">
-	        <input name="email" type="text" class="form-control" id="inputEmail" placeholder="Email"/>
+	        <input name="email" type="text" class="form-control" id="inputEmail" placeholder="Email" required/>
 	      </div>
 		  <div class="col-sm-2" id="infoEmail"></div>
 	    </div>
 	    <div class="form-group row">
 	      <label for="upass" class="col-sm-2 col-form-label">Password</label>
 	      <div class="col-sm-7">
-	        <input name="password" type="password" class="form-control" id="inputPassword" placeholder="Password">
+	        <input name="password" type="password" class="form-control" id="inputPassword" placeholder="Password" required>
 	      </div>
 		  <div class="col-sm-2" id="infoPass"></div>
 	    </div>
 	    <div class="form-group row">
 	      <label class="col-form-legend col-sm-2" for="gender">Gender</label>
 	      <div class="col-sm-7 px-5">
-	        <input class="form-check-input" type="radio" name="gender" id="radioMale" value="1" checked> Male <br/>
-            <input class="form-check-input" type="radio" name="gender" id="radioFemale" value="2"> Female
+	        <input class="form-check-input" type="radio" name="gender" id="radioMale" value="Male" checked> Male <br/>
+            <input class="form-check-input" type="radio" name="gender" id="radioFemale" value="Female"> Female
 	      </div>
 	    </div>
 	    <div class="form-group row">
 	      <label class="col-form-legend col-sm-2" for="utype">User Type</label>
 	      <div class="col-sm-7 px-5">
-	        <input class="form-check-input" type="radio" name="utype" id="radioPass" value="3" checked> Passenger <br/>
-            <input class="form-check-input" type="radio" name="utype" id="radioBO" value="2"> Bus Owner
+	        <input class="form-check-input" type="radio" name="utype" id="radioPass" value="Passenger" checked> Passenger <br/>
+            <input class="form-check-input" type="radio" name="utype" id="radioStudent" value="Student"> Student (10% Discount) <br/>
+            <input class="form-check-input" type="radio" name="utype" id="radioStaff" value="Staff"> Staff (5% Discount) <br/>
+            <input class="form-check-input" type="radio" name="utype" id="radioBO" value="Owner"> Bus Owner
 	      </div>
 	    </div>
 	    <div class="form-group row">
@@ -130,8 +132,8 @@ t_navbar();
 		<div class="form-group row">
 	      <label for="mobile" class="col-sm-2 col-form-label">Mobile</label>
 	      <div class="col-sm-7 input-group">
-	      	<span class="input-group-addon">+880</span>
-	        <input name="mobile" type="text" class="form-control" id="inputMobile" placeholder="Mobile No."/>
+	      	<span class="input-group-addon">+234</span>
+	        <input name="mobile" type="text" class="form-control" id="inputMobile" placeholder="Mobile No." required/>
 	      </div>
 		  <div class="col-sm-2" id="infoMobile"></div>
 	    </div>

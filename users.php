@@ -16,7 +16,7 @@ t_admin_sidebar();
     <h4 class="col-md-3">Users</h4>
     <div class="col-md-8 text-right ml-4">
     <form method="post" action="">
-    	<input type="text" name="user" class="form-control-sm" value="<?php echo (isset($_POST['user'])) ? $_POST['user'] : ""; ?>">
+    	<input type="text" name="user" class="form-control-sm" value="<?php echo (isset($_POST['user']) ? $_POST['user'] : ""); ?>">
         <button type="submit" class="btn btn-sm btn-primary"><i class="fa fa-search"></i> Search</button>
     </form>
     </div>
@@ -29,7 +29,8 @@ t_admin_sidebar();
     <div class="col-md-2">Email</div>
     <div class="col-md-1">Gender</div>
     <div class="col-md-1">Type</div>
-    <div class="col-md-2">Address</div>
+    <div class="col-md-1">Category</div>
+    <div class="col-md-1">Address</div>
     <div class="col-md-2">Mobile</div>
 </div>
 <?php
@@ -56,7 +57,8 @@ else {
             <div class="col-md-2">' . $row["email"] . '</div>
             <div class="col-md-1">' . $row["gender"] . '</div>
             <div class="col-md-1">' . $row["utype"] . '</div>
-            <div class="col-md-2">' . $row["address"] . '</div>
+            <div class="col-md-1">' . ($row["passenger_category"] ? $row["passenger_category"] : '-') . '</div>
+            <div class="col-md-1">' . $row["address"] . '</div>
             <div class="col-md-2">0' . $row["mobile"] . '</div>
         </div>';
     }
