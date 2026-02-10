@@ -1,7 +1,10 @@
 <?php
 session_start();
-if (!isset($_SESSION['user']) || $_SESSION['user']['utype'] != "Passenger")
+if (!isset($_SESSION['user']) || $_SESSION['user']['utype'] != "Passenger") {
     header("Location: index.php");
+    exit();
+}
+
 include 'inc/basic_template.php';
 t_header("Bus Ticket Booking &mdash; History");
 t_login_nav();
@@ -10,8 +13,8 @@ t_sidebar();
 
 <div class="container">
     <div class="popup" id="seatViewer"></div>
-    <div class="loader text-center" id="wait"><img src="/img/bus-loader.gif" alt="Wait..."/></div>
-    <h4>History</h4>
+    <div class="loader text-center" id="wait"><img src="img/bus-loader.gif" alt="Wait..."/></div>
+    <h4>Booking History</h4>
 <div class="table-con">
 <div class="row">
     <div class="col-md-1">ID</div>
@@ -28,55 +31,46 @@ t_sidebar();
 require_once 'inc/database.php';
 $conn = initDB();
 
-// Check if connection is successful
-if (!$conn) {
-    echo '<div class="row"><div class="col-md-12 text-danger">Database connection failed</div></div>';
+$user_id = intval($_SESSION['user']['id']);
+
+$query = "SELECT t.id as t_id, t.jdate, t.fare, t.seats, b.id as bus_id, b.bname as bus_name,";
+$query .= "b.from_loc, b.to_loc, b.from_time, b.to_time FROM tickets t LEFT JOIN buses b ON t.bus_id = b.id WHERE t.passenger_id = $user_id";
+$query .= " ORDER BY t.id DESC";
+
+$res = $conn->query($query);
+
+if (!$res) {
+    echo '<div class="row"><div class="col-md-12">Query Error: ' . $conn->error . '</div></div>';
+} elseif ($res->num_rows == 0) {
+    echo '
+    <div class="row">
+        <div class="col-md-12">No Tickets Found</div>
+    </div>';
 } else {
-    $query = "select t.id as t_id, t.jdate, t.fare, t.seats, b.id as bus_id, b.bname as bus_name,";
-    $query .= "b.from_loc, b.to_loc, b.from_time, b.to_time from tickets t, buses b where t.bus_id = b.id and t.passenger_id=" . $_SESSION['user']['id'];
-    $query .= " ORDER BY t.id DESC";
-    
-    $res = $conn->query($query);
-    
-    // Check if query was successful
-    if (!$res) {
-        echo '<div class="row"><div class="col-md-12 text-danger">Query Error: ' . $conn->error . '</div></div>';
-    } elseif ($res->num_rows == 0) {
-        echo '
-        <div class="row">
-            <div class="col-md-12">No Tickets Found</div>
-        </div>';
-    } else {
-        while ($row = $res->fetch_assoc()) {
-            // Safely unserialize seats data
-            $seats_data = @unserialize($row["seats"]);
-            
-            // Check if unserialize was successful
-            if ($seats_data === false && $row["seats"] !== 'b:0;') {
-                // Unserialize failed, try to fix common issues
-                $seats_count = 0;
-                $seats_display = 'Error';
-            } else {
-                $seats_count = is_array($seats_data) ? count($seats_data) : 0;
-                $seats_display = $seats_count;
-            }
-            
-            echo '
-            <div class="content row">
-                <div class="col-md-1">' . htmlspecialchars($row["t_id"]) . '</div>
-                <div class="col-md-2">' . htmlspecialchars($row["bus_name"]) . '</div>
-                <div class="col-md-1">' . htmlspecialchars($row["from_loc"]) . '</div>
-                <div class="col-md-1">' . htmlspecialchars($row["to_loc"]) . '</div>
-                <div class="col-md-2">' . htmlspecialchars($row["from_time"]) . '</div>
-                <div class="col-md-2">' . htmlspecialchars($row["to_time"]) . '</div>
-                <div class="col-md-1">' . htmlspecialchars($row["jdate"]) . '</div>
-                <div class="col-md-1">' . htmlspecialchars($row["fare"]) . '</div>
-                <div class="col-md-1">' . $seats_display . '</div>
-            </div>';
+    while ($row = $res->fetch_assoc()) {
+        $seats_data = @unserialize($row["seats"]);
+        
+        if ($seats_data === false && $row["seats"] !== 'b:0;') {
+            $seats_count = 0;
+        } else {
+            $seats_count = is_array($seats_data) ? count($seats_data) : 0;
         }
+        
+        echo '
+        <div class="content row">
+            <div class="col-md-1">' . htmlspecialchars($row["t_id"]) . '</div>
+            <div class="col-md-2">' . htmlspecialchars($row["bus_name"]) . '</div>
+            <div class="col-md-1">' . htmlspecialchars($row["from_loc"]) . '</div>
+            <div class="col-md-1">' . htmlspecialchars($row["to_loc"]) . '</div>
+            <div class="col-md-2">' . htmlspecialchars($row["from_time"]) . '</div>
+            <div class="col-md-2">' . htmlspecialchars($row["to_time"]) . '</div>
+            <div class="col-md-1">' . htmlspecialchars($row["jdate"]) . '</div>
+            <div class="col-md-1">' . htmlspecialchars($row["fare"]) . '</div>
+            <div class="col-md-1">' . $seats_count . '</div>
+        </div>';
     }
-    $conn->close();
 }
+$conn->close();
 ?>
 </div>
 </div>

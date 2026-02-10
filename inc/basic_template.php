@@ -32,7 +32,7 @@ function t_login_nav() {
 <div class="navbar fixed-top navbar-default header">
 <div class="container-fluid">
 	<h3>Bus Ticket Booking System</h3>
-	<div class="navbar-right">Welcome, '.$_SESSION['user']['uname'].' <a href="/index.php?logout=1"><button class="btn btn-success ml-3 btn-sm">Logout</button></a></div>
+	<div class="navbar-right">Welcome, '.$_SESSION['user']['uname'].' <a href="index.php?logout=1"><button class="btn btn-success ml-3 btn-sm">Logout</button></a></div>
 </div></div>';
 }
 
@@ -42,9 +42,9 @@ function t_sidebar() {
 <div class="row">
 	<div class="col-md-2 sidebar">
 			<ul>
-				<li><a href="buy_ticket.php"'.(($file == 'buy_ticket') ? 'class="active"' : '').'><i class="fa fa-ticket"></i> Buy Ticket</a></li>
-				<li><a href="profile.php"'.(($file == 'profile') ? 'class="active"' : '').'><i class="fa fa-address-card"></i> My Profile</a></li>
-				<li><a href="history.php"'.(($file == 'history') ? 'class="active"' : '').'><i class="fa fa-history"></i> History</a></li>
+				<li><a href="buy_ticket.php"'.(($file == 'buy_ticket') ? ' class="active"' : '').'><i class="fa fa-ticket"></i> Buy Ticket</a></li>
+				<li><a href="profile.php"'.(($file == 'profile') ? ' class="active"' : '').'><i class="fa fa-address-card"></i> My Profile</a></li>
+				<li><a href="history.php"'.(($file == 'history') ? ' class="active"' : '').'><i class="fa fa-history"></i> History</a></li>
 			</ul>
 	</div>
 	<div class="col-md-10">
@@ -58,9 +58,9 @@ function t_owner_sidebar() {
 <div class="row">
 	<div class="col-md-2 sidebar">
 			<ul>
-				<li><a href="my_buses.php"'.(($file == 'my_buses') ? 'class="active"' : '').'><i class="fa fa-bus"></i> My Buses</a></li>
-				<li><a href="earning.php"'.(($file == 'earning') ? 'class="active"' : '').'><i class="fa fa-money"></i> My Earning</a></li>
-				<li><a href="profile.php"'.(($file == 'profile') ? 'class="active"' : '').'><i class="fa fa-address-card"></i> My Profile</a></li>
+				<li><a href="my_buses.php"'.(($file == 'my_buses') ? ' class="active"' : '').'><i class="fa fa-bus"></i> My Buses</a></li>
+				<li><a href="earning.php"'.(($file == 'earning') ? ' class="active"' : '').'><i class="fa fa-money"></i> My Earning</a></li>
+				<li><a href="profile.php"'.(($file == 'profile') ? ' class="active"' : '').'><i class="fa fa-address-card"></i> My Profile</a></li>
 			</ul>
 	</div>
 	<div class="col-md-10">
@@ -74,10 +74,10 @@ function t_admin_sidebar() {
 <div class="row">
 	<div class="col-md-2 sidebar">
 			<ul>
-				<li><a href="users.php"'.(($file == 'users') ? 'class="active"' : '').'><i class="fa fa-users"></i> Users</a></li>
-				<li><a href="locations.php"'.(($file == 'locations') ? 'class="active"' : '').'><i class="fa fa-map"></i> Locations</a></li>
-				<li><a href="buses.php"'.(($file == 'buses') ? 'class="active"' : '').'><i class="fa fa-bus"></i> Buses</a></li>
-				<li><a href="profile.php"'.(($file == 'profile') ? 'class="active"' : '').'><i class="fa fa-address-card"></i> My Profile</a></li>
+				<li><a href="users.php"'.(($file == 'users') ? ' class="active"' : '').'><i class="fa fa-users"></i> Users</a></li>
+				<li><a href="locations.php"'.(($file == 'locations') ? ' class="active"' : '').'><i class="fa fa-map"></i> Locations</a></li>
+				<li><a href="buses.php"'.(($file == 'buses') ? ' class="active"' : '').'><i class="fa fa-bus"></i> Buses</a></li>
+				<li><a href="profile.php"'.(($file == 'profile') ? ' class="active"' : '').'><i class="fa fa-address-card"></i> My Profile</a></li>
 			</ul>
 	</div>
 	<div class="col-md-10">
