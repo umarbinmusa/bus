@@ -114,7 +114,7 @@ t_navbar();
 <table width="100%">
 <tr>
 	<td width="70%">
-		<img src="img/cover_bus.jpg" alt="Bus" height="100%" style="max-height: 600px; object-fit: cover;"/>
+		<img src="img/cover_bus.jpeg" alt="Bus" height="100%" style="max-height: 600px; object-fit: cover;"/>
 	</td>
 	<td width="30%" style="padding: 20px;">
 		<?php

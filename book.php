@@ -1,12 +1,13 @@
 <?php
 /**
- * book.php - Dedicated booking handler
- * Accepts POST from the seat selection modal form
- * Works for Passenger, Student, and Staff user types
+ * book.php — Booking handler
+ * Enforces:
+ *   - 5-minute booking window (checked server-side via session timestamp)
+ *   - Seat category rules (Student/Staff/General)
+ *   - Student can take Staff seats only in last 2 minutes of window
  */
 session_start();
 
-// Must be logged in as a passenger-type user
 if (!isset($_SESSION['user']) || !in_array($_SESSION['user']['utype'], ['Passenger','Student','Staff'])) {
     header('Location: index.php');
     exit();
@@ -15,72 +16,125 @@ if (!isset($_SESSION['user']) || !in_array($_SESSION['user']['utype'], ['Passeng
 require_once 'inc/database.php';
 $conn = initDB();
 
-// ── Read POST fields ──────────────────────────────────────────
+// ── Read POST ──────────────────────────────────────────────────
 $busid     = (int)($_POST['bus_id'] ?? 0);
 $jdate     = trim($_POST['jdate']   ?? '');
 $fare      = (int)($_POST['fare']   ?? 0);
 $passenger = (int)$_SESSION['user']['id'];
 $usertype  = $_SESSION['user']['utype'];
-
-// seats[] comes as a normal PHP array from checkbox[] inputs
 $seats_raw = $_POST['seats'] ?? [];
 
-// ── Validate ──────────────────────────────────────────────────
+// ── Basic validation ───────────────────────────────────────────
 $errors = [];
-if ($busid   <= 0)          $errors[] = "Invalid bus.";
-if ($jdate   === '')        $errors[] = "Missing journey date.";
-if ($fare    <= 0)          $errors[] = "Invalid fare (did you select seats?).";
-if (empty($seats_raw))      $errors[] = "No seats selected.";
+if ($busid   <= 0)      $errors[] = "Invalid bus.";
+if ($jdate  === '')     $errors[] = "Missing journey date.";
+if ($fare    <= 0)      $errors[] = "Invalid fare — did you select seats?";
+if (empty($seats_raw)) $errors[] = "No seats selected.";
 
 if (!empty($errors)) {
-    // Go back with error message
     $msg = urlencode(implode(' ', $errors));
     header("Location: buy_ticket.php?error=$msg");
     exit();
 }
 
-// ── Apply discount ────────────────────────────────────────────
-if ($usertype === 'Student') {
-    $fare = (int)round($fare * 0.90);   // 10 % off
-} elseif ($usertype === 'Staff') {
-    $fare = (int)round($fare * 0.95);   // 5 % off
+// ── 5-MINUTE BOOKING WINDOW ────────────────────────────────────
+// We store the first time the user opened the seat modal in their session.
+// The key is based on bus+date so each search gets its own fresh timer.
+$timerKey = 'booking_start_' . $busid . '_' . md5($jdate);
+
+if (!isset($_SESSION[$timerKey])) {
+    // First visit — start the clock now
+    // (The modal was just opened; we set this on the first POST)
+    // But if we get here it means the modal was never properly started — reject.
+    $msg = urlencode("Booking session not found. Please search again.");
+    header("Location: buy_ticket.php?error=$msg");
+    exit();
 }
 
-// ── Serialize the seat array ──────────────────────────────────
-if (is_array($seats_raw)) {
-    $seats_serialized = serialize(array_values($seats_raw));
-} else {
-    // Fallback: single seat sent as a string
-    $seats_serialized = serialize([$seats_raw]);
+$elapsed  = time() - (int)$_SESSION[$timerKey];
+$TOTAL    = 5 * 60;      // 300 seconds
+$UNLOCK   = $TOTAL - (2 * 60);  // 180 seconds elapsed = last 2 min
+
+if ($elapsed > $TOTAL) {
+    unset($_SESSION[$timerKey]);
+    $msg = urlencode("Booking window expired (5 minutes). Please search again.");
+    header("Location: buy_ticket.php?error=$msg");
+    exit();
 }
 
-$seats_db  = $conn->real_escape_string($seats_serialized);
+// ── Load bus seat categories ───────────────────────────────────
+$busRes  = $conn->query("SELECT * FROM buses WHERE id=$busid AND approved=1");
+$businfo = $busRes ? $busRes->fetch_assoc() : null;
+
+if (!$businfo) {
+    $msg = urlencode("Bus not found or not approved.");
+    header("Location: buy_ticket.php?error=$msg");
+    exit();
+}
+
+$studentSeats = !empty($businfo['student_seats'])
+    ? array_map('trim', explode(',', $businfo['student_seats'])) : [];
+$staffSeats   = !empty($businfo['staff_seats'])
+    ? array_map('trim', explode(',', $businfo['staff_seats']))   : [];
+$generalSeats = !empty($businfo['general_seats'])
+    ? array_map('trim', explode(',', $businfo['general_seats'])) : [];
+
+// ── Validate each requested seat ──────────────────────────────
+$badSeats = [];
+foreach ($seats_raw as $seat) {
+    $seat = trim($seat);
+    $cat  = 'general';
+    if (in_array($seat, $studentSeats))      $cat = 'student';
+    elseif (in_array($seat, $staffSeats))    $cat = 'staff';
+
+    $allowed = false;
+
+    if ($usertype === 'Student') {
+        if ($cat === 'student') {
+            $allowed = true;
+        } elseif ($cat === 'staff') {
+            // Only allowed in the last 2 minutes (elapsed >= UNLOCK threshold)
+            $allowed = ($elapsed >= $UNLOCK);
+        } elseif ($cat === 'general') {
+            $allowed = true;
+        }
+    } elseif ($usertype === 'Staff') {
+        $allowed = ($cat === 'staff' || $cat === 'general');
+    } elseif ($usertype === 'Passenger') {
+        $allowed = ($cat === 'general');
+    }
+
+    if (!$allowed) $badSeats[] = "$seat ($cat)";
+}
+
+if (!empty($badSeats)) {
+    $msg = urlencode("You are not allowed to book: " . implode(', ', $badSeats));
+    header("Location: buy_ticket.php?error=$msg");
+    exit();
+}
+
+// ── Apply discount ─────────────────────────────────────────────
+if ($usertype === 'Student') $fare = (int)round($fare * 0.90);
+elseif ($usertype === 'Staff') $fare = (int)round($fare * 0.95);
+
+// ── Insert ticket ──────────────────────────────────────────────
+$seats_db  = $conn->real_escape_string(serialize(array_values($seats_raw)));
 $jdate_db  = $conn->real_escape_string($jdate);
 
-// ── Check whether booking_confirmed column exists ─────────────
-$has_confirmed_col = false;
-$chk = $conn->query("SHOW COLUMNS FROM tickets LIKE 'booking_confirmed'");
-if ($chk && $chk->num_rows > 0) {
-    $has_confirmed_col = true;
-}
-
-// ── INSERT ────────────────────────────────────────────────────
-if ($has_confirmed_col) {
-    $sql = "INSERT INTO tickets
-                (passenger_id, bus_id, jdate, seats, fare, booking_confirmed)
-            VALUES
-                ($passenger, $busid, '$jdate_db', '$seats_db', $fare, 1)";
+$has_confirmed = $conn->query("SHOW COLUMNS FROM tickets LIKE 'booking_confirmed'");
+if ($has_confirmed && $has_confirmed->num_rows > 0) {
+    $sql = "INSERT INTO tickets (passenger_id, bus_id, jdate, seats, fare, booking_confirmed)
+            VALUES ($passenger, $busid, '$jdate_db', '$seats_db', $fare, 1)";
 } else {
-    $sql = "INSERT INTO tickets
-                (passenger_id, bus_id, jdate, seats, fare)
-            VALUES
-                ($passenger, $busid, '$jdate_db', '$seats_db', $fare)";
+    $sql = "INSERT INTO tickets (passenger_id, bus_id, jdate, seats, fare)
+            VALUES ($passenger, $busid, '$jdate_db', '$seats_db', $fare)";
 }
 
 if ($conn->query($sql)) {
     $ticket_id = $conn->insert_id;
+    // Clear timer
+    unset($_SESSION[$timerKey]);
     $conn->close();
-    // Redirect to history with success flag
     header("Location: history.php?booked=$ticket_id");
     exit();
 } else {

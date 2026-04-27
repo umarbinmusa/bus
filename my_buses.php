@@ -120,7 +120,7 @@ t_owner_sidebar();
             </div>
         </div>
         <div class="form-group row">
-            <div class="col-sm-3">Fare (৳)</div>
+            <div class="col-sm-3">Price (₦)</div>
                 <div class="col-sm-8">
                     <input type="number" name="fare" class="form-control" min="0" required/>
             </div>
@@ -239,7 +239,7 @@ updateCategorization();
     <th>Bus Name</th>
     <th>Bus No.</th>
     <th>Route</th>
-    <th>Fare</th>
+    <th>Price</th>
     <th>Total Seats</th>
     <th>Seat Categories</th>
     <th>Status</th>
